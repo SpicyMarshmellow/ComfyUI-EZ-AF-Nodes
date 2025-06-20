@@ -27,6 +27,8 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 
 3. Open the Manager, search `ez-af` in the Custom Nodes Manager and then install it.
 
+##
+
 #### Option 2. Manual Installation
 
 1. Clone this repo into `custom_nodes`:
