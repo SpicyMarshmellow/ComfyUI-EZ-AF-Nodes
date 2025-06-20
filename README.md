@@ -41,11 +41,16 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 # Nodes
 
 ## File Loader Nodes
-File loader nodes allows visually pleasing and intuitive selection of prompts, tags or other texts with custom UI.
-Loader nodes can output single or multiple texts based on selection, as well as randomize selection or batch/list all texts.
+Custom UI File Loader nodes allows visually pleasing and intuitive selection of prompts, tags or rows of CSV file.
+Loader nodes can output single or multiple texts based on mode, as well as randomize selection or batch/list all texts.
 Loader nodes keep selections on workflow load or page refresh.
 
-## File Structure
+#Selection modes:
+- single: Select one item at a time. Output 1 item at a time.
+- multiple: Select multiple items. Output will be concatenated with a comma.
+- random: Randomly select one item from selection on each prompt queue. If less than 2 items are selected, will draw randomly from all items.
+
+# File Structure
 Files are loaded from directories and subdirectories within `comfyui-ez-af-nodes` project, populate these directories with your custom presets as you like
 
 ```
@@ -73,6 +78,11 @@ Loads and processes content of CSV files based on rows.
 ![image](https://github.com/user-attachments/assets/2699d058-1565-40fd-83c1-dc1004cd1374)
 
 Loads whole lines of text based on selection.
+> [!NOTE]
+> You can add extra text after each tag, works with all selection modes and batch.
+>
+> 
+> Empty lines of text are ignored, to include empty tag as an option, put "\[empty\]" as a line in .txt file with tags
 
 # Utility Nodes
 
@@ -88,8 +98,9 @@ Dynamic input node. Combines any number of text inputs with customizable delimit
 
 Dynamic input node. Allows selection of a single input either randomly or by index.
 
-WARNING: This node uses "ANY" type for both inputs and output, allowing it to pass anything, including models, images, latents, etc.
-This node doesn't do any processing with inputs it gets, so if you try to pass its output to a node that does not expect certain type, you will get an error.
+> [!WARNING]
+> This node uses "ANY" type for both inputs and output, allowing it to pass anything, including models, images, latents, etc.
+> This node doesn't do any processing with inputs it gets, so if you try to pass its output to a node that does not expect certain type, you will get an error.
 
 ## **EZ Extract Prompt**
 
