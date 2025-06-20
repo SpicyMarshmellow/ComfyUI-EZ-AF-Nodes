@@ -15,7 +15,7 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 
 ## Installation
 
-#### Option 1 — ComfyUI-Manager
+#### Option 1. ComfyUI-Manager
 
 1. Install [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager) into `custom_nodes` if you haven't already:
 
@@ -27,7 +27,7 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 
 3. Open the Manager, search `ez-af` in the Custom Nodes Manager and then install it.
 
-#### Option 2 — Manual Installation
+#### Option 2. Manual Installation
 
 1. Clone this repo into `custom_nodes`:
    
@@ -40,16 +40,16 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 # Nodes
 
 ## File Loader Nodes
-File loader nodes allows visual and intuitive selection of prompts, tags or other texts via custom UI.
-All loader nodes can output single or multiple texts based on selection, as well as randomize selection or batch all texts.
-All loader nodes can read files form subdirectories.
+File loader nodes allows visually pleasing and intuitive selection of prompts, tags or other texts with custom UI.
+Loader nodes can output single or multiple texts based on selection, as well as randomize selection or batch/list all texts.
+All loader nodes can read files form subdirectories. Loader nodes keep selections on workflow load or page refresh.
 
 ## File Structure
 Files are loaded from directories within `comfyui-ez-af-nodes` project, populate these directories with your custom presets as you like
 
 ```
 comfyui-ez-af-nodes/
-├── PROMPTS/          # For prompt text files
+├── PROMPTS/          # For prompt text files and thumbnails
 ├── CSV/              # For CSV data files  
 └── TAGS/             # For tag files
 ```
@@ -64,23 +64,26 @@ Loads and processes content of CSV files based on rows.
 ## **EZ Tag Loader**
 Loads whole lines of text based on selection.
 
-# Text Processing Nodes
-
-## **EZ Extract Prompt**
-Utility node, expected to be used with File loaders.
-Extracts content from text based on headers. Can extract all non-header content or specific section.
-
-## **EZ Find & Replace**
-Performs find and replace operations on text strings with case-sensitive replacement.
+# Utility Nodes
 
 ## **EZ Text Concatenate**
-Combines any number of text inputs with customizable delimiters and text beautification options.
+Dynamic input node. Combines any number of text inputs with customizable delimiters and text beautification options.
 
-## **EZ Input**
-Simple text input node for manual text entry with universal output type.
+## **EZ Switch**
+Dynamic input node. Allows selection of a single input either randomly or by index.
+
+WARNING: This node uses "ANY" type for both inputs and output, allowing it to pass anything, including models, images, latents, etc.
+This node doesn't do any processing with inputs it gets, so if you try to pass its output to a node that does not expect certain type, you will get an error.
+
+## **EZ Extract Prompt**
+Utility node, expected to be used with either CSV or PROMPT File loaders.
+Extracts content from text based on headers. Can extract all non-header content or specific section.
 
 ## **EZ Text to Size**
-Extracts width and height values from text strings containing size information.
+Extracts width and height values from text strings (always uses the last 2 found numbers as size).
+
+## **Other Text Utilities**
+You may find more nodes that do basic things like find & replace or input string, i keep them for myself for testing purposes, i recommend using built-in comfy core nodes instead
 
 # Example Workflow
 
