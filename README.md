@@ -45,12 +45,12 @@ Custom UI File Loader nodes allows visually pleasing and intuitive selection of 
 Loader nodes can output single or multiple texts based on mode, as well as randomize selection or batch/list all texts.
 Loader nodes keep selections on workflow load or page refresh.
 
-# Selection modes:
+### Selection modes:
 - single: Select one item at a time. Output 1 item at a time.
 - multiple: Select multiple items. Output will be concatenated with a comma.
 - random: Randomly select one item from selection on each prompt queue. If less than 2 items are selected, will draw randomly from all items.
 
-# File Structure
+### File Structure
 Files are loaded from directories and subdirectories within `comfyui-ez-af-nodes` project, populate these directories with your custom presets as you like
 
 ```
