@@ -88,6 +88,9 @@ You may find more nodes that do basic things like find & replace or input string
 
 *To be added*
 
+![image](https://github.com/user-attachments/assets/96d09025-2a56-40d9-8899-e235446d558b)
+
+
 # License
 
 [MIT License](LICENSE)
