@@ -42,10 +42,10 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 ## File Loader Nodes
 File loader nodes allows visually pleasing and intuitive selection of prompts, tags or other texts with custom UI.
 Loader nodes can output single or multiple texts based on selection, as well as randomize selection or batch/list all texts.
-All loader nodes can read files form subdirectories. Loader nodes keep selections on workflow load or page refresh.
+Loader nodes keep selections on workflow load or page refresh.
 
 ## File Structure
-Files are loaded from directories within `comfyui-ez-af-nodes` project, populate these directories with your custom presets as you like
+Files are loaded from directories and subdirectories within `comfyui-ez-af-nodes` project, populate these directories with your custom presets as you like
 
 ```
 comfyui-ez-af-nodes/
