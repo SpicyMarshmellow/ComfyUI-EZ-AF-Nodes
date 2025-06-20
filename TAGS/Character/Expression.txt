@@ -1,0 +1,16 @@
+smiling
+serious
+laughing
+crying
+angry
+neutral
+surprised
+smirking
+winking
+thoughtful
+joyful
+flirty
+disgusted
+fearful
+confident
+curious

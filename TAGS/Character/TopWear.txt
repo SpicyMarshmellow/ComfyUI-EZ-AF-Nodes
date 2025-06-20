@@ -1,0 +1,75 @@
+t-shirt
+shirt
+sweater
+hoodie
+tank top
+dress shirt
+button-up shirt
+turtleneck
+polo shirt
+blazer
+suit jacket
+military jacket
+bomber jacket
+windbreaker
+leather jacket
+v-neck shirt
+long sleeve shirt
+henley
+cardigan
+flannel shirt
+sweatshirt
+crop top
+puffer jacket
+parka
+fleece jacket
+chambray shirt
+duster coat
+peacoat
+raincoat
+golf shirt
+thermal shirt
+polo neck
+crew neck shirt
+kimono
+sherpa jacket
+bra
+bralette
+sports bra
+bikini top
+corset
+bustier
+lingerie
+silk robe
+lace top
+camisole
+pajama set
+
+cape
+shawl
+fur coat
+duffle coat
+trench coat
+puffer jacket
+parka
+pea coat
+blazer
+cardigan
+bolero jacket
+duster
+raincoat
+cloak
+leather jacket
+denim jacket
+military jacket
+bomber jacket
+oversized coat
+chanel-style jacket
+teddy coat
+long coat
+cropped jacket
+poncho
+cardigan sweater
+fur stole
+capelet
+fur-lined coat

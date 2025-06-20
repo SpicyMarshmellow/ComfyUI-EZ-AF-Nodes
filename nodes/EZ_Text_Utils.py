@@ -1,47 +1,4 @@
 import re
-import os
-from server import PromptServer  # type: ignore # - server is a part of ComfyUI Core
-from aiohttp import web
-
-def clean_text(text):
-    text = re.sub(r'\n','####', text) # Replace line breaks to keep it for future (line breaks should not be deleted by default
-    text = re.sub(r'\s+,', ',', text) # Remove spaces before commas
-    text = re.sub(r',+', ',', text) # Remove duplicate commas
-    text = re.sub(r',(\S)', r', \1', text) # Add a space after a comma if it's followed by a word without space
-    text = re.sub(r'[ \t]+', ' ', text) # Replace multiple spaces with a single space, while keeping newlines
-    text = re.sub(r'\.,|,\.', '.', text) # Replace incorrect combinations like '.,' and ',.' with '.'
-    text = re.sub(r"####",'\n', text) # Return line breaks
-    text = re.sub(r'(\n\s*){3,}', '\n\n', text) # Consolidate three or more consecutive newlines into two
-    text = text.strip().replace(" .", ".") # Remove spaces before periods
-    text = re.sub(r',(\S)', r' ', text) # Add a space after a comma if it's followed by a word without space
-    cleaned_lines = [line.lstrip("., ") for line in text.splitlines()] # Delete excess commas
-    text = "\n".join(cleaned_lines)
-    return text
-
-class AnyType(str):
-    def __ne__(self, __value: object) -> bool:
-        return False
-
-any = AnyType("*")
-
-class EZ_Input:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "String": ("STRING", {"multiline": True}),
-            }
-        }
-
-    RETURN_TYPES = (any, )
-    RETURN_NAMES = ("any", )
-    FUNCTION = "to_string"
-    CATEGORY = "EZ NODES"
-
-    def to_string(self, String):
-        
-        Combo = String
-        return (Combo, )
 
 class EZ_Extract_Prompt:
     @classmethod
@@ -120,85 +77,48 @@ Finds and replaces all instances of text string
         string = string.replace(find, replace)
         return (string,)
 
-class EZ_Text_Concat: # inspired by WAS-Suite by Jordan Thompson (WASasquatch) and Bjornulf nodes
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "number_of_inputs": ("INT", {"default": 2, "min": 2, "max": 50, "step": 1}),
-                "delimiter": ("STRING", {"default": "\\n"}),
-                "beautify": (["never", "before", "after"], {"default": "never"}),
-                "line_breaks": (["keep", "delete"], {"default": "keep"}),
-            },
-            "hidden": {
-                **{f"text_{i}": ("STRING", {"forceInput": "True"}) for i in range(1, 51)}
-            },
-        }
-
-    RETURN_TYPES = ("STRING",)
-    FUNCTION = "text_concatenate"
-    CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Concatenate any number of string inputs into a single string with options to beatify text before or after concatenation
-
-use single or multiple "\\n" inputs as delimiter to add line breaks
-"""
-
-    def text_concatenate(self, delimiter, beautify, line_breaks, number_of_inputs, **kwargs):
-        text_inputs = [] 
-        delimiter=delimiter.replace("\\n","\n")
-        for k in sorted(kwargs.keys()):
-            v = kwargs[k]
-            if isinstance(v, str):
-                if beautify == "before":
-                        v=clean_text(v)
-                if v != "":
-                    text_inputs.append(v)
-        merged_text = delimiter.join(text_inputs)
-        print(merged_text)
-        if beautify == "after":
-            merged_text = clean_text(merged_text)
-        if line_breaks == "delete":
-            merged_text = re.sub(r'\n',' ', merged_text)
-            merged_text = re.sub(r'\s+', ' ', merged_text)
-        return (merged_text,)
-    
 class EZ_Text_to_Size:
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "text": ("STRING", {"default": "1024x1024"}),
+                "text_input": ("STRING", {"default": "1024x1024"}),
             },
         }
 
-    RETURN_TYPES = (any, any,)
+    RETURN_TYPES = ("INT", "INT",)
     RETURN_NAMES = ("WIDTH", "HEIGHT",)
     FUNCTION = "extract_size"
     CATEGORY = "EZ NODES"
     DESCRIPTION = """
-Extract numbers from text string to be used as width and height
+Extract the last 2 numbers found within a text string to be used as width and height
 """
 
-    def extract_size(self, text):
-        # Extract all numbers from the text using regex
-        numbers = re.findall(r'\d+', text)
-        
-        # Return last two numbers as width and height
-        width = int(numbers[-2])
-        height = int(numbers[-1])
-        
-        return (width, height,)
-
-    @classmethod
-    def VALIDATE_INPUTS(cls, text):
-        # Extract all numbers from the text using regex
-        numbers = re.findall(r'\d+', text)
-        
-        # Check if we have at least 2 numbers
-        if len(numbers) < 2:
-            return "Need at least 2 numbers in text"
-        return True
-        
+    def extract_size(self, text_input):
+        try:
+            # Handle None or empty input
+            if text_input is None or text_input == "":
+                print("EZ_Text_to_Size: No input provided, using default 1024x1024")
+                return (1024, 1024,)
+            
+            # Convert to string to ensure we're working with a string
+            text_input = str(text_input)
+            
+            # Extract all numbers from the text using regex
+            numbers = re.findall(r'\d+', text_input)
+            
+            # Check if we have at least 2 numbers
+            if len(numbers) < 2:
+                print(f"EZ_Text_to_Size: Need at least 2 numbers, found {len(numbers)} in '{text_input}'. Using default 1024x1024")
+                return (1024, 1024,)
+            
+            # Return last two numbers as width and height
+            width = int(numbers[-2])
+            height = int(numbers[-1])
+            
+            print(f"EZ_Text_to_Size: Extracted {width}x{height} from '{text_input}'")
+            return (width, height,)
+            
+        except Exception as e:
+            print(f"EZ_Text_to_Size: Error processing input '{text_input}': {str(e)}. Using default 1024x1024")
+            return (1024, 1024,)

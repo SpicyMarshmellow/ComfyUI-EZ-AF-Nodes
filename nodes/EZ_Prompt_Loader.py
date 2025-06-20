@@ -1,6 +1,5 @@
 from server import PromptServer  # type: ignore // ComfyUI Core
 import os
-import re
 from PIL import Image
 from aiohttp import web
 import io
@@ -26,7 +25,7 @@ class EZ_Prompt_Loader:
         return {
             "required": {
                 "prompt_directory": (prompt_dirs,),
-                "selection_type": (["single", "multiple", "random"], {"default": "single"}),
+                "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
             },
             "optional": {
                 "filter_text": ("STRING", {"default": ""}),
@@ -49,7 +48,7 @@ Selection types:
 - random: Randomly select one file on each prompt queue
 """
 
-    def browse_files(self, prompt_directory, selection_type="single", selected_files="", filter_text=""):
+    def browse_files(self, prompt_directory, selection_mode="single", selected_files="", filter_text=""):
         global prompts_path
         prompt_directory = os.path.join(prompts_path, prompt_directory)
         prompt_directory = os.path.abspath(prompt_directory)
@@ -62,7 +61,7 @@ Selection types:
 
         # Handle different selection types
         selected_list = []
-        if selection_type == "random":
+        if selection_mode == "random":
             if selected_files:
                 selected_files_list = [f.strip() for f in selected_files.split(",")]
                 valid_selected_files = [f for f in selected_files_list if f in files]
@@ -73,7 +72,7 @@ Selection types:
             else:
                 selected = random.choice(files)
             selected_list = [selected]
-        elif selection_type == "multiple":
+        elif selection_mode == "multiple":
             if selected_files:
                 selected_list = [f.strip() for f in selected_files.split(",") if f.strip() in files]
         else:  # single
@@ -83,7 +82,7 @@ Selection types:
                 selected_list = [selected_files]
 
         # Main output
-        if selection_type == "multiple":
+        if selection_mode == "multiple":
             prompt_texts = []
             for file in selected_list:
                 file = file.strip()
@@ -91,14 +90,14 @@ Selection types:
                     txt_path = os.path.join(prompt_directory, file)
                     if os.path.isfile(txt_path):
                         with open(txt_path, "r", encoding="utf-8") as f:
-                            prompt_texts.append(f.read())
-            prompt_text = "\n".join(prompt_texts)
+                            prompt_texts.append(f.read().strip())
+            prompt_text = ", ".join(prompt_texts)
         else:
             txt_path = os.path.join(prompt_directory, selected_list[0])
             prompt_text = ""
             if os.path.isfile(txt_path):
                 with open(txt_path, "r", encoding="utf-8") as f:
-                    prompt_text = f.read()
+                    prompt_text = f.read().strip()
 
         # List output: if 0 or 1 selected, output all prompts; else output selected_list
         if len(selected_list) <= 1:
@@ -107,25 +106,25 @@ Selection types:
                 txt_path = os.path.join(prompt_directory, file)
                 if os.path.isfile(txt_path):
                     with open(txt_path, "r", encoding="utf-8") as f:
-                        all_output.append(f.read())
+                        all_output.append(f.read().strip())
         else:
             all_output = []
             for file in selected_list:
                 txt_path = os.path.join(prompt_directory, file)
                 if os.path.isfile(txt_path):
                     with open(txt_path, "r", encoding="utf-8") as f:
-                        all_output.append(f.read())
+                        all_output.append(f.read().strip())
 
         return (prompt_text, prompt_directory, all_output)
 
     @classmethod
-    def IS_CHANGED(cls, selection_type, prompt_directory, selected_files="", filter_text=""):
-        if selection_type == "random":
+    def IS_CHANGED(cls, prompt_directory, selection_mode, selected_files="", filter_text=""):
+        if selection_mode == "random":
             return float('nan')
-        return selected_files + str(prompt_directory) + str(selection_type)
+        return selected_files + str(prompt_directory) + str(selection_mode)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, prompt_directory, selected_files=""):
+    def VALIDATE_INPUTS(cls, prompt_directory, selected_files="", selection_mode="single"):
         global prompts_path
         prompt_directory = os.path.join(prompts_path, prompt_directory)
         prompt_directory = os.path.abspath(prompt_directory)

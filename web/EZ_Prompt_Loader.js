@@ -18,22 +18,22 @@ async function addFileBrowserUI(node) {
 
     const rootDirectoryWidget = node.widgets.find(w => w.name === "prompt_directory");
     const selectedFilesWidget = node.widgets.find(w => w.name === "selected_files");
-    const selectionTypeWidget = node.widgets.find(w => w.name === "selection_type");
+    const selectionModeWidget = node.widgets.find(w => w.name === "selection_mode");
     const filterTextWidget = node.widgets.find(w => w.name === "filter_text");
 
-    if (!rootDirectoryWidget || !selectedFilesWidget || !selectionTypeWidget || !filterTextWidget) {
-        console.error("Required widgets not found:", { rootDirectoryWidget, selectedFilesWidget, selectionTypeWidget, filterTextWidget });
+    if (!rootDirectoryWidget || !selectedFilesWidget || !selectionModeWidget || !filterTextWidget) {
+        console.error("Required widgets not found:", { rootDirectoryWidget, selectedFilesWidget, selectionModeWidget, filterTextWidget });
         return;
     }
 
     rootDirectoryWidget.hidden = false;
     selectedFilesWidget.hidden = true;
-    selectionTypeWidget.hidden = false;
+    selectionModeWidget.hidden = false;
     filterTextWidget.hidden = false;
 
     const MIN_WIDTH = 390;
-    const MIN_HEIGHT = 390;
-    const TOP_PADDING = 192;
+    const MIN_HEIGHT = 410;
+    const TOP_PADDING = 212;
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
     const TOP_BAR_HEIGHT = 0;
@@ -142,7 +142,7 @@ async function addFileBrowserUI(node) {
     }
 
     function updateSelectedFiles(file) {
-        if (selectionTypeWidget.value === "multiple" || selectionTypeWidget.value === "random") {
+        if (selectionModeWidget.value === "multiple" || selectionModeWidget.value === "random") {
             if (selectedFiles.has(file)) {
                 selectedFiles.delete(file);
             } else {
@@ -166,10 +166,10 @@ async function addFileBrowserUI(node) {
         const maxWidth = node.size[0] - TEXT_PADDING * 2;
         
         let displayText = text;
-        if (selectionTypeWidget.value === "multiple") {
+        if (selectionModeWidget.value === "multiple") {
             const count = selectedFiles.size;
             displayText = `${count} prompt${count !== 1 ? 's' : ''} selected`;
-        } else if (selectionTypeWidget.value === "random") {
+        } else if (selectionModeWidget.value === "random") {
             const count = selectedFiles.size > 0 ? selectedFiles.size : files.length;
             displayText = `selecting from ${count} prompt${count !== 1 ? 's' : ''}`;
         } else {
@@ -215,7 +215,7 @@ async function addFileBrowserUI(node) {
         })();
     };
 
-    selectionTypeWidget.callback = () => {
+    selectionModeWidget.callback = () => {
         selectedFiles.clear();
         selectedFilesWidget.value = "";
         node.setDirtyCanvas(true);
@@ -224,6 +224,35 @@ async function addFileBrowserUI(node) {
     filterTextWidget.callback = () => {
         filterText = filterTextWidget.value;
         updateFiles();
+    };
+
+    // Add Invert Selection button widget
+    const invertButton = node.addWidget("button", "Invert Selection", null, () => {
+        if (selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random") return;
+        const allFileNames = files;
+        const newSelected = new Set();
+        for (const file of allFileNames) {
+            if (!selectedFiles.has(file)) newSelected.add(file);
+        }
+        selectedFiles = newSelected;
+        // Update widget value
+        const selectedFilesString = Array.from(selectedFiles).join(", ");
+        selectedFilesWidget.value = selectedFilesString;
+        node.setDirtyCanvas(true);
+    });
+    // Ensure correct enabled state on load
+    setTimeout(() => {
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+    }, 0);
+
+    // Update button enabled/disabled state on mode change
+    const origSelectionModeCallback = selectionModeWidget.callback;
+    selectionModeWidget.callback = () => {
+        selectedFiles.clear();
+        selectedFilesWidget.value = "";
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+        node.setDirtyCanvas(true);
+        if (origSelectionModeCallback) origSelectionModeCallback();
     };
 
     node.onDrawBackground = function(ctx) {
@@ -439,6 +468,15 @@ async function addFileBrowserUI(node) {
         updateNodeSize();
         this.setDirtyCanvas(true);
     };
+
+    // Restore selection from widget value on load
+    setTimeout(() => {
+        selectedFiles = new Set(
+            selectedFilesWidget.value.split(',').map(t => t.trim()).filter(t => t !== '')
+        );
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+        node.setDirtyCanvas(true);
+    }, 0);
 
     // Initialize
     setTimeout(async () => {

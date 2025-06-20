@@ -26,7 +26,7 @@ class EZ_CSV_Loader:
         return {
             "required": {
                 "csv_file": (csv_files,),
-                "selection_type": (["single", "multiple", "random"], {"default": "single"}),
+                "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
             },
             "optional": {
                 "filter_text": ("STRING", {"default": ""}),
@@ -50,7 +50,7 @@ Selection types:
 - random: Randomly select one row on each prompt queue
 """
 
-    def browse_csv(self, csv_file, selection_type="single", selected_row="", filter_text=""):
+    def browse_csv(self, csv_file, selection_mode="single", selected_row="", filter_text=""):
         global csv_path
         csv_file = os.path.join(csv_path, csv_file)
         csv_file = os.path.abspath(csv_file)
@@ -84,9 +84,9 @@ Selection types:
 
         # Handle selection
         selected_indices = []
-        if selection_type == "random":
+        if selection_mode == "random":
             selected_indices = [random.randint(0, len(rows)-1)]
-        elif selection_type == "multiple":
+        elif selection_mode == "multiple":
             if selected_row:
                 try:
                     selected_indices = [int(idx) for idx in selected_row.split(",") if idx.strip().isdigit() and int(idx) < len(rows)]
@@ -124,13 +124,13 @@ Selection types:
         return (output_str, csv_file, all_outputs)
 
     @classmethod
-    def IS_CHANGED(cls, selection_type, csv_file, selected_row="", filter_text=""):
-        if selection_type == "random":
+    def IS_CHANGED(cls, csv_file, selection_mode, selected_row="", filter_text=""):
+        if selection_mode == "random":
             return float('nan')
-        return selected_row + str(csv_file) + str(selection_type)
+        return selected_row + str(csv_file) + str(selection_mode)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, csv_file, selected_row=""):
+    def VALIDATE_INPUTS(cls, csv_file, selected_row="", selection_mode="single"):
         global csv_path
         csv_file = os.path.join(csv_path, csv_file)
         csv_file = os.path.abspath(csv_file)

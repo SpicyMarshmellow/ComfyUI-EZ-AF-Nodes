@@ -25,10 +25,11 @@ class EZ_Tag_Loader:
         return {
             "required": {
                 "tags_file": (txt_files,),
-                "selection_type": (["single", "multiple", "random"], {"default": "single"}),
+                "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
             },
             "optional": {
                 "filter_text": ("STRING", {"default": ""}),
+                "add_after": ("STRING", {"default": ""}),
                 "selected_tags": ("STRING", {"default": ""}),
             }
         }
@@ -49,7 +50,7 @@ Selection types:
 - random: Randomly select one tag on each prompt queue
 """
 
-    def browse_tags(self, tags_file, selection_type="single", selected_tags="", filter_text=""):
+    def browse_tags(self, tags_file, selection_mode="single", selected_tags="", filter_text="", add_after=""):
         global tags_path
         tags_file = os.path.join(tags_path, tags_file)
         tags_file = os.path.abspath(tags_file)
@@ -59,7 +60,15 @@ Selection types:
 
         # Read tags from file
         with open(tags_file, "r", encoding="utf-8") as f:
-            tags = [line.strip() for line in f.readlines() if line.strip()]
+            tags = []
+            for line in f.readlines():
+                line = line.strip()
+                if not line:
+                    continue
+                if line == '[empty]':
+                    tags.append("")
+                else:
+                    tags.append(line)
 
         if not tags:
             return ("No tags found in file", tags_file, [])
@@ -71,9 +80,9 @@ Selection types:
         if not tags:
             return ("No matching tags found", tags_file, [])
 
-        # Handle different selection types
+        # Handle different selection modes
         selected_list = []
-        if selection_type == "random":
+        if selection_mode == "random":
             if selected_tags:
                 selected_tags_list = [tag.strip() for tag in selected_tags.split(",")]
                 valid_selected_tags = [tag for tag in selected_tags_list if tag in tags]
@@ -84,7 +93,7 @@ Selection types:
             else:
                 selected = random.choice(tags)
             selected_list = [selected]
-        elif selection_type == "multiple":
+        elif selection_mode == "multiple":
             if selected_tags:
                 selected_list = [tag.strip() for tag in selected_tags.split(",") if tag.strip() in tags]
         else:  # single
@@ -93,25 +102,36 @@ Selection types:
             else:
                 selected_list = [selected_tags]
 
+        # Add 'add_after' to each selected tag if provided
+        if add_after:
+            selected_list = [add_after if tag == '' else f"{tag} {add_after}" for tag in selected_list]
+
         # Main output
         main_output = ", ".join(selected_list)
 
-        # List output: if 0 or 1 selected, output all tags; else output selected_list
+        # List output: if 0 or 1 selected, output all tags (with add_after if present); else output selected_list
         if len(selected_list) <= 1:
-            all_output = tags
+            if add_after:
+                all_output = [add_after if tag == '' else f"{tag} {add_after}" for tag in tags]
+            else:
+                all_output = tags
         else:
-            all_output = selected_list
+            # Special case: only [empty] tag selected and add_after is not empty
+            if len(selected_list) == 1 and selected_list[0] == add_after and add_after.strip() != '':
+                all_output = [add_after]
+            else:
+                all_output = selected_list
 
         return (main_output, tags_file, all_output)
 
     @classmethod
-    def IS_CHANGED(cls, selection_type, tags_file, selected_tags="", filter_text=""):
-        if selection_type == "random":
+    def IS_CHANGED(cls, tags_file, selection_mode, selected_tags="", filter_text="", add_after=""):
+        if selection_mode == "random":
             return float('nan')
-        return selected_tags + str(tags_file) + str(selection_type)
+        return selected_tags + str(tags_file) + str(selection_mode) + str(add_after)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, tags_file, selected_tags=""):
+    def VALIDATE_INPUTS(cls, tags_file, selected_tags="", add_after="", selection_mode="single"):
         global tags_path
         tags_file = os.path.join(tags_path, tags_file)
         tags_file = os.path.abspath(tags_file)
@@ -133,13 +153,19 @@ def get_directory_structure(path):
 def get_tags_from_file(file_path, filter_text=""):
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            tags = [line.strip() for line in f.readlines() if line.strip()]
-            
+            tags = []
+            for line in f.readlines():
+                line = line.strip()
+                if not line:
+                    continue
+                if line == '[empty]':
+                    tags.append("")
+                else:
+                    tags.append(line)
             # Apply filter if provided
             if filter_text:
                 filter_text = filter_text.lower()
                 tags = [tag for tag in tags if filter_text in tag.lower()]
-                
             return tags
     except Exception as e:
         print(f"Error reading tags file {file_path}: {e}")

@@ -1,0 +1,34 @@
+long
+short
+curly
+straight
+wavy
+braided
+bald
+buzzcut
+bob
+pixie
+ponytail
+buns
+double ponytail
+afro
+dreadlocks
+spiky
+layered
+feathered
+messy
+tied-back
+fishtail braid
+french braid
+cornrows
+twists
+shaved sides
+undercut
+fade
+pompadour
+quiff
+mohawk
+faux hawk
+half-up half-down
+space buns
+ringlets

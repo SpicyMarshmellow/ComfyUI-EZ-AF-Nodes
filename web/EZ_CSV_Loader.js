@@ -18,22 +18,22 @@ async function addCSVBrowserUI(node) {
 
     const csvFileWidget = node.widgets.find(w => w.name === "csv_file");
     const selectedRowWidget = node.widgets.find(w => w.name === "selected_row");
-    const selectionTypeWidget = node.widgets.find(w => w.name === "selection_type");
+    const selectionModeWidget = node.widgets.find(w => w.name === "selection_mode");
     const filterTextWidget = node.widgets.find(w => w.name === "filter_text");
 
-    if (!csvFileWidget || !selectedRowWidget || !selectionTypeWidget || !filterTextWidget) {
-        console.error("Required widgets not found:", { csvFileWidget, selectedRowWidget, selectionTypeWidget, filterTextWidget });
+    if (!csvFileWidget || !selectedRowWidget || !selectionModeWidget || !filterTextWidget) {
+        console.error("Required widgets not found:", { csvFileWidget, selectedRowWidget, selectionModeWidget, filterTextWidget });
         return;
     }
 
     csvFileWidget.hidden = false;
     selectedRowWidget.hidden = true;
-    selectionTypeWidget.hidden = false;
+    selectionModeWidget.hidden = false;
     filterTextWidget.hidden = false;
 
     const MIN_WIDTH = 310;
-    const MIN_HEIGHT = 340;
-    const TOP_PADDING = 190;
+    const MIN_HEIGHT = 360;
+    const TOP_PADDING = 212;
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
     const TOP_BAR_HEIGHT = 0;
@@ -127,7 +127,7 @@ async function addCSVBrowserUI(node) {
     }
 
     function updateSelectedRows(rowIdx) {
-        if (selectionTypeWidget.value === "multiple" || selectionTypeWidget.value === "random") {
+        if (selectionModeWidget.value === "multiple" || selectionModeWidget.value === "random") {
             if (selectedRows.has(rowIdx)) {
                 selectedRows.delete(rowIdx);
             } else {
@@ -205,19 +205,17 @@ async function addCSVBrowserUI(node) {
         ctx.font = "12px Arial";
         const maxWidth = node.size[0] - PREVIEW_PADDING * 2;
         let displayText = "";
-        if (selectionTypeWidget.value === "random") {
+        if (selectionModeWidget.value === "random") {
             const rowCount = selectedRows.size > 0 ? selectedRows.size : rows.length;
             displayText = `selecting from ${rowCount} rows`;
-        } else if (selectionTypeWidget.value === "multiple") {
+        } else if (selectionModeWidget.value === "multiple") {
             displayText = `${selectedRows.size} rows selected`;
-        } else if (selectionTypeWidget.value === "single" && selectedRows.size === 1 && headers.length > 0) {
-            // Show the label (first column) for the selected row
+        } else if (selectionModeWidget.value === "single" && selectedRows.size === 1 && headers.length > 0) {
             const idx = Array.from(selectedRows)[0];
             if (rows[idx]) {
                 displayText = rows[idx][0] || `Row ${idx+1}`;
             }
         }
-        // Truncate preview if too long (by rendered width)
         if (ctx.measureText(displayText).width > maxWidth) {
             let truncatedText = displayText;
             while (ctx.measureText(truncatedText + ELLIPSIS).width > maxWidth && truncatedText.length > 0) {
@@ -255,10 +253,33 @@ async function addCSVBrowserUI(node) {
         updateRows();
     };
 
-    selectionTypeWidget.callback = () => {
+    // Add Invert Selection button widget
+    const invertButton = node.addWidget("button", "Invert Selection", null, () => {
+        if (selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random") return;
+        const allRowIndices = Array.from({length: rows.length}, (_, i) => i);
+        const newSelected = new Set();
+        for (const idx of allRowIndices) {
+            if (!selectedRows.has(idx)) newSelected.add(idx);
+        }
+        selectedRows = newSelected;
+        // Update widget value
+        const selectedRowsString = Array.from(selectedRows).join(",");
+        selectedRowWidget.value = selectedRowsString;
+        node.setDirtyCanvas(true);
+    });
+    // Ensure correct enabled state on load
+    setTimeout(() => {
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+    }, 0);
+
+    // Update button enabled/disabled state on mode change
+    const origSelectionModeCallback = selectionModeWidget.callback;
+    selectionModeWidget.callback = () => {
         selectedRows.clear();
         selectedRowWidget.value = "";
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
         node.setDirtyCanvas(true);
+        if (origSelectionModeCallback) origSelectionModeCallback();
     };
 
     node.onDrawBackground = function(ctx) {
@@ -414,6 +435,15 @@ async function addCSVBrowserUI(node) {
         updateNodeSize();
         this.setDirtyCanvas(true);
     };
+
+    // Restore selection from widget value on load
+    setTimeout(() => {
+        selectedRows = new Set(
+            selectedRowWidget.value.split(',').map(t => t.trim()).filter(t => t !== '').map(t => parseInt(t)).filter(Number.isFinite)
+        );
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+        node.setDirtyCanvas(true);
+    }, 0);
 
     // Initialize
     setTimeout(async () => {

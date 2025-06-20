@@ -18,22 +18,24 @@ async function addTagBrowserUI(node) {
 
     const tagsFileWidget = node.widgets.find(w => w.name === "tags_file");
     const selectedTagsWidget = node.widgets.find(w => w.name === "selected_tags");
-    const selectionTypeWidget = node.widgets.find(w => w.name === "selection_type");
+    const selectionModeWidget = node.widgets.find(w => w.name === "selection_mode");
     const filterTextWidget = node.widgets.find(w => w.name === "filter_text");
+    const addAfterWidget = node.widgets.find(w => w.name === "add_after");
 
-    if (!tagsFileWidget || !selectedTagsWidget || !selectionTypeWidget || !filterTextWidget) {
-        console.error("Required widgets not found:", { tagsFileWidget, selectedTagsWidget, selectionTypeWidget, filterTextWidget });
+    if (!tagsFileWidget || !selectedTagsWidget || !selectionModeWidget || !filterTextWidget || !addAfterWidget) {
+        console.error("Required widgets not found:", { tagsFileWidget, selectedTagsWidget, selectionModeWidget, filterTextWidget, addAfterWidget });
         return;
     }
 
     tagsFileWidget.hidden = false;
     selectedTagsWidget.hidden = true;
-    selectionTypeWidget.hidden = false;
+    selectionModeWidget.hidden = false;
     filterTextWidget.hidden = false;
+    addAfterWidget.hidden = false;
 
     const MIN_WIDTH = 310;
-    const MIN_HEIGHT = 340;
-    const TOP_PADDING = 190;
+    const MIN_HEIGHT = 380;
+    const TOP_PADDING = 235;
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
     const TOP_BAR_HEIGHT = 0;
@@ -44,7 +46,7 @@ async function addTagBrowserUI(node) {
     const MIN_COLUMN_WIDTH = 150; // Minimum width for a column
     const TEXT_PADDING = 10; // Padding for text within tag
     const PREVIEW_PADDING = 20; // Padding for preview text
-    const PREVIEW_SKIP = 152; // Skip for preview text
+    const PREVIEW_SKIP = 176; // Skip for preview text
     const BORDER_RADIUS = 0;
     const SELECTION_BORDER_RADIUS = 0;
     const SELECTION_BORDER_PADDING = 0;
@@ -122,18 +124,21 @@ async function addTagBrowserUI(node) {
     }
 
     function updateSelectedTags(tag) {
-        if (selectionTypeWidget.value === "multiple" || selectionTypeWidget.value === "random") {
-            if (selectedTags.has(tag)) {
-                selectedTags.delete(tag);
+        // Use a unique symbol for empty string tags to allow selection/deselection
+        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
+        const tagKey = tag === '' ? EMPTY_TAG_SYMBOL : tag;
+        if (selectionModeWidget.value === "multiple" || selectionModeWidget.value === "random") {
+            if (selectedTags.has(tagKey)) {
+                selectedTags.delete(tagKey);
             } else {
-                selectedTags.add(tag);
+                selectedTags.add(tagKey);
             }
         } else {
             selectedTags.clear();
-            selectedTags.add(tag);
+            selectedTags.add(tagKey);
         }
-        
-        const selectedTagsString = Array.from(selectedTags).join(", ");
+        // Store the actual tag values in the widget (not the symbol)
+        const selectedTagsString = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t).join(", ");
         selectedTagsWidget.value = selectedTagsString;
         node.setDirtyCanvas(true);
     }
@@ -141,32 +146,42 @@ async function addTagBrowserUI(node) {
     function drawPreviewText(ctx, text) {
         ctx.fillStyle = COLORS.text;
         ctx.font = "12px Arial";
-        
-        // Calculate available width for text
         const maxWidth = node.size[0] - PREVIEW_PADDING * 2;
-        
         let displayText = text;
-        
-        // For random mode, show tag count
-        if (selectionTypeWidget.value === "random") {
-            const tagCount = selectedTags.size > 0 ? selectedTags.size : tags.length;
+        const addAfter = addAfterWidget.value ? (" " + addAfterWidget.value) : "";
+        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
+        // Use the actual selected tags for preview
+        let selectedTagValues = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t);
+        if (selectionModeWidget.value === "random") {
+            const tagCount = selectedTagValues.length > 0 ? selectedTagValues.length : tags.length;
             displayText = `selecting from ${tagCount} tags`;
-        } else {
-            // Measure text width for other modes
-            const textMetrics = ctx.measureText(text);
-            
-            // If text is too long, truncate it
-            if (textMetrics.width > maxWidth) {
-                let truncatedText = text;
-                while (ctx.measureText(truncatedText + ELLIPSIS).width > maxWidth && truncatedText.length > 0) {
-                    truncatedText = truncatedText.slice(0, -1);
+        } else if (selectionModeWidget.value === "multiple") {
+            if (selectedTagValues.length > 0) {
+                // Special case: only [empty] tag selected
+                if (selectedTagValues.length === 1 && selectedTagValues[0] === '' && addAfter.trim() !== '') {
+                    displayText = addAfter.trim();
+                } else {
+                    displayText = selectedTagValues.map(tag => tag === '' ? addAfter.trim() : tag + addAfter).join(", ");
                 }
-                displayText = truncatedText + ELLIPSIS;
+            } else {
+                displayText = "";
+            }
+        } else if (selectionModeWidget.value === "single") {
+            if (selectedTagValues.length > 0) {
+                displayText = selectedTagValues.map(tag => tag === '' ? addAfter.trim() : tag + addAfter).join(", ");
+            } else {
+                displayText = "";
             }
         }
-        
-        // Draw the text
-            ctx.fillText(displayText, PREVIEW_PADDING, PREVIEW_SKIP);
+        // Truncate preview if too long
+        if (ctx.measureText(displayText).width > maxWidth) {
+            let truncatedText = displayText;
+            while (ctx.measureText(truncatedText + ELLIPSIS).width > maxWidth && truncatedText.length > 0) {
+                truncatedText = truncatedText.slice(0, -1);
+            }
+            displayText = truncatedText + ELLIPSIS;
+        }
+        ctx.fillText(displayText, PREVIEW_PADDING, PREVIEW_SKIP);
     }
 
     const refreshButton = node.addWidget("button", "Refresh / Clear", null, () => {
@@ -196,11 +211,46 @@ async function addTagBrowserUI(node) {
         updateTags();
     };
 
-    selectionTypeWidget.callback = () => {
+    // Add Invert Selection button widget
+    const invertButton = node.addWidget("button", "Invert Selection", null, () => {
+        if (selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random") return;
+        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
+        const allTagKeys = tags.map(tag => tag === '' ? EMPTY_TAG_SYMBOL : tag);
+        const newSelected = new Set();
+        for (const tagKey of allTagKeys) {
+            if (!selectedTags.has(tagKey)) newSelected.add(tagKey);
+        }
+        selectedTags = newSelected;
+        // Update widget value
+        const selectedTagsString = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t).join(", ");
+        selectedTagsWidget.value = selectedTagsString;
+        node.setDirtyCanvas(true);
+    });
+
+    // Ensure correct enabled state on load
+    setTimeout(() => {
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+    }, 0);
+
+    // Update button enabled/disabled state on mode change
+    const origSelectionModeCallback = selectionModeWidget.callback;
+    selectionModeWidget.callback = () => {
         selectedTags.clear();
         selectedTagsWidget.value = "";
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
         node.setDirtyCanvas(true);
+        if (origSelectionModeCallback) origSelectionModeCallback();
     };
+
+    // Restore selection from widget value on load
+    setTimeout(() => {
+        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
+        selectedTags = new Set(
+            selectedTagsWidget.value.split(',').map(t => t.trim()).filter(t => t !== '').map(t => t === '' ? EMPTY_TAG_SYMBOL : t)
+        );
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+        node.setDirtyCanvas(true);
+    }, 0);
 
     node.onDrawBackground = function(ctx) {
         if (!this.flags.collapsed) {
@@ -272,17 +322,20 @@ async function addTagBrowserUI(node) {
         const startRow = Math.floor(scrollOffset / (TAG_HEIGHT + TAG_PADDING));
         const endRow = Math.min(rows, startRow + Math.ceil(visibleHeight / (TAG_HEIGHT + TAG_PADDING))+2);
 
+        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
+
         for (let row = startRow; row < endRow; row++) {
             for (let col = 0; col < columns; col++) {
                 const tagIndex = row * columns + col;
                 if (tagIndex >= tags.length) break;
 
                 const tag = tags[tagIndex];
+                const tagKey = tag === '' ? EMPTY_TAG_SYMBOL : tag;
                 const xPos = x + EXTRA_TAG_PADDING + TAG_PADDING + col * (columnWidth + TAG_PADDING);
-                const yPos = y + EXTRA_TAG_PADDING + row * (TAG_HEIGHT + TAG_PADDING) + TAG_PADDING;
+                const yPos = y + row * (TAG_HEIGHT + TAG_PADDING) + TAG_PADDING;
 
                 // Draw tag background
-                const bgColor = selectedTags.has(tag) ? COLORS.tagSelected : COLORS.tag;
+                const bgColor = selectedTags.has(tagKey) ? COLORS.tagSelected : COLORS.tag;
                 drawRoundedRect(ctx, xPos, yPos, columnWidth, TAG_HEIGHT, BORDER_RADIUS, bgColor);
 
                 // Draw tag text with truncation
@@ -293,19 +346,21 @@ async function addTagBrowserUI(node) {
                 const maxTextWidth = columnWidth - TEXT_PADDING * 2;
                 
                 // Measure text width
-                const textMetrics = ctx.measureText(tag);
                 let displayText = tag;
-                
-                // If text is too long, truncate it
-                if (textMetrics.width > maxTextWidth) {
-                    let truncatedText = tag;
-                    while (ctx.measureText(truncatedText + ELLIPSIS).width > maxTextWidth && truncatedText.length > 0) {
-                        truncatedText = truncatedText.slice(0, -1);
+                // If tag is empty, display nothing
+                if (tag === '') {
+                    displayText = '';
+                } else {
+                    const textMetrics = ctx.measureText(tag);
+                    if (textMetrics.width > maxTextWidth) {
+                        let truncatedText = tag;
+                        while (ctx.measureText(truncatedText + ELLIPSIS).width > maxTextWidth && truncatedText.length > 0) {
+                            truncatedText = truncatedText.slice(0, -1);
+                        }
+                        displayText = truncatedText + ELLIPSIS;
                     }
-                    displayText = truncatedText + ELLIPSIS;
                 }
-                
-                // Draw the text
+                // Draw the text (empty tag will appear empty)
                 ctx.fillText(displayText, xPos + TEXT_PADDING, yPos + TAG_HEIGHT / 2 + 4);
             }
         }

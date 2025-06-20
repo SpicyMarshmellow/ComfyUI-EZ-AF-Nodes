@@ -1,0 +1,17 @@
+CHARACTER:
+frieren, sousou no frieren, grey hair, green eyes, elf, pointy ears,
+
+HAIRSTYLE:
+long hair, twintails, parted bangs, 
+
+ACCESSORIES:
+earrings,
+
+TOPWEAR:
+striped shirt, white capelet, long sleeves,
+
+BOTTOMWEAR:
+black belt, white skirt, black pantyhose,
+
+FOOTWEAR:
+brown boots,

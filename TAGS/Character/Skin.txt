@@ -1,0 +1,15 @@
+fair
+pale
+medium
+olive
+tan
+dark
+ebony
+golden
+rosy
+ruddy
+porcelain
+chocolate
+mahogany
+amber
+ivory
