@@ -104,7 +104,7 @@ Selection types:
             row = rows[idx]
             out = ""
             for h, v in zip(headers, row):
-                out += f"{h}:\n\n{v}\n\n"
+                out += f"{h}:\n{v}\n\n"
             outputs.append(out.strip())
         output_str = "\n---\n".join(outputs)
 
@@ -118,7 +118,7 @@ Selection types:
             row = rows[idx]
             out = ""
             for h, v in zip(headers, row):
-                out += f"{h}:\n\n{v}\n\n"
+                out += f"{h}:\n{v}\n\n"
             all_outputs.append(out.strip())
 
         return (output_str, csv_file, all_outputs)

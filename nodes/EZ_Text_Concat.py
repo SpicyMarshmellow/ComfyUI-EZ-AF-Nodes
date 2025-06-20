@@ -21,7 +21,7 @@ class EZ_Text_Concat: # inspired by WAS-Suite by Jordan Thompson (WASasquatch) a
         return {
             "required": {
                 "number_of_inputs": ("INT", {"default": 2, "min": 2, "max": 50, "step": 1}),
-                "delimiter": ("STRING", {"default": "\\n"}),
+                "delimiter": ("STRING", {"default": ",\\n"}),
                 "beautify": (["never", "before", "after"], {"default": "never"}),
                 "line_breaks": (["keep", "delete"], {"default": "keep"}),
             },
