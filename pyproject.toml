@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-ez-af-nodes"
-description = "This pack helps to conveniently control text in complex prompt-builder type workflows. Load/Read Prompts from .CSV; Concatenate large amounts of text; Use string input as ANY type. Requires pythongosssss custom scripts"
-version = "1.0.2"
+description = "Conveniently control parts of text prompts with custom UI. Pack includes loaders from txt and csv files, dynamic text concatenation tool and easy-to-use input node"
+version = "2.0.0"
 license = {file = "LICENSE"}
 
 [project.urls]

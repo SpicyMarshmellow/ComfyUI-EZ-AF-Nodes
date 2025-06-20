@@ -1,69 +1,115 @@
-# ComfyUI-EZ-AF-Nodes
+# EZ-AF Nodes for ComfyUI
 
-**Custom nodes pack for ComfyUI**
+> **Easy-to-use, Advanced Features** - A comprehensive node pack for ComfyUI that provides dynamic file browsing, text processing, and data management capabilities.
 
-This custom nodes pack helps to conveniently control text in complex prompt-builder type workflows
+[![Install](https://img.shields.io/badge/Install-Instructions-blue)](#installation) [![Nodes](https://img.shields.io/badge/Nodes-Documentation-green)](#nodes) [![Example](https://img.shields.io/badge/Example-Workflows-orange)](#example)
 
-> [!WARNING]
-> This pack requires pysssss.Binding extension. To use it, install [pythongosssss Custom Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts)
+---
 
-<!--  It is recommended to install this pack using [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)  --> 
+## Table of Contents
 
+| [Installation](#installation) | [Nodes](#nodes) | [Example](#example) |
+|:---:|:---:|:---:|
+| Setup guide and requirements | Complete node documentation | Workflow examples and usage |
+
+---
+
+## Installation
+
+### Prerequisites
+- **ComfyUI** - Latest version recommended
+- **Python 3.x** - Python 3.8 or higher
+- **Dependencies** - Automatically installed via requirements.txt
+
+### Quick Setup
+
+1. **Clone the repository** to your ComfyUI custom_nodes directory:
+   ```bash
+   cd ComfyUI/custom_nodes
+   git clone https://github.com/your-repo/comfyui-ez-af-nodes.git
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   cd comfyui-ez-af-nodes
+   pip install -r requirements.txt
+   ```
+
+3. **Restart ComfyUI**
+
+4. **Verify installation** - Look for "EZ NODES" category in the node browser
+
+### Manual Installation
+If you prefer manual installation:
+```bash
+pip install aiohttp Pillow
+```
+
+### File Structure Setup
+Create the following directories in the project root (if they don't exist):
+```
+comfyui-ez-af-nodes/
+├── PROMPTS/          # For prompt text files
+├── CSV/             # For CSV data files  
+└── TAGS/            # For tag files
+```
+
+---
 
 ## Nodes
 
-### EZ CSV Reader
+### File Loader Nodes
+File loader nodes allows visual and intuitive selection of prompts, tags or other texts via custom UI.
+All loader nodes can output single or multiple texts based on selection, as well as randomize selection or batch all texts.
+All loader nodes can read files form subdirectories.
 
-![CSV Reader](https://github.com/user-attachments/assets/b17f8e55-9761-4b66-93bd-acd438bee866)
+#### **EZ Prompt Loader**
+Loads full content of text files based on selection. Supports image thumbnails.
+Locate "PROMPTS" folder in "../custom_nodes/comfyui-ez-af-nodes" to add personalized prompts.
+Thumnails are shown if there is an image (.png/.jpg) file with the name matching the .txt file name in the same folder
 
-This node allows you to import positive and negative prompts from a selected line of selected .csv file
+#### **EZ CSV Loader**
+Loads and processes content of CSV files based on rows.
+Locate "CSV" folder in "../custom_nodes/comfyui-ez-af-nodes" to add personalized csv files.
 
-Files are located in **...\ComfyUI\custom_nodes\ComfyUI-EZ-AF-Nodes\CSV**
+#### **EZ Tag Loader**
+Loads whole lines of text based on selection.
+Locate "TAGS" folder in "../custom_nodes/comfyui-ez-af-nodes" to add personalized tag sets.
 
-- You can add your own files
-- Node supports sub-directories
-- You can keep LORA weights and wildcards in prompts saved in .csv
+### Text Processing Nodes
 
-> [!NOTE]
-> .csv files for this node use **semicolon** delimeters, native to Microsoft Excel
-> 
-> Quotations marks are not needed (as prompts generally shouldn't contain semicolons), but allowed
+#### **EZ Extract Prompt**
+Utility node, expected to be used with File loaders.
+Extracts content from text based on headers. Can extract all non-header content or specific section.
 
-### EZ MEGA Text Concatenate
+#### **EZ Find & Replace**
+Performs find and replace operations on text strings with case-sensitive replacement.
 
-![Concatenate](https://github.com/user-attachments/assets/1179f642-8b28-4c50-9850-71df8ac974cf)
+#### **EZ Text Concatenate**
+Combines any number of text inputs with customizable delimiters and text beautification options.
 
-This node allows you to concatenate up to **24** strings of text
+#### **EZ Input**
+Simple text input node for manual text entry with universal output type.
 
-Useful for extremely complex prompt-builder workflows.
+#### **EZ Text to Size**
+Extracts width and height values from text strings containing size information.
 
-No more concat stacking!
+---
 
-### EZ String
+## Example Workflow
 
-![String](https://github.com/user-attachments/assets/9e0c9455-a9ce-4617-9847-e1cb2f2e6b6d)
+*This section is reserved for workflow examples and usage notes.*
 
-This node works like a string primitive, but allows you to output text as _"ANY"_ type
+---
 
-This is primarily useful to easily create inputs for _"COMBO"_ type widgets.
+## License
 
-No more unnecessary conversions!
+MIT License - see [LICENSE](LICENSE) file for details.
 
+---
 
-## Example
+<div align="center">
 
-Drag and Drop this image (or this [code](https://github.com/ez-af/ComfyUI-EZ-AF-Nodes/blob/main/examples/workflow.json)) into your ComfyUI window to see example workflow with some tips:
+**EZ-AF**
 
-![Example Workflow](https://github.com/ez-af/ComfyUI-EZ-AF-Nodes/blob/main/examples/Workflow.png)
-
-## Youtube Overview
-
-Click this image, it leads to youtube video!
-
-[![Tutorial](https://github.com/user-attachments/assets/adcedccb-9e57-4aaa-a616-25194e8baf5c)](https://youtu.be/GRT_f14mGzc)
-
-
-@ez-af!
-
-
-[ComfyUI-EZ-AF-Nodes](https://github.com/ez-af/ComfyUI-EZ-AF-Nodes)
+</div>

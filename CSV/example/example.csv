@@ -2,4 +2,3 @@
 Example;Example positive ;Example negative
 Wildcard example;__wildcardname__, ;
 LORA example;<lora:loraname:0.9>, ;
-
