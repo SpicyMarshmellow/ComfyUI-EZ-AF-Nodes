@@ -65,13 +65,27 @@ comfyui-ez-af-nodes/
 ![image](https://github.com/user-attachments/assets/fafec7d1-ae31-40ac-b7ba-bb3f546ec810)
 
 Loads full content of text files based on selection. Supports image thumbnails.
-Thumnails are shown if there is an image (.png/.jpg) file with the name matching the .txt file name in the same folder
+> [!NOTE]
+> Thumnails are only shown if there is an image (.png/.jpg) file with the name matching the .txt file in the same folder
 
 ## **EZ CSV Loader**
 
 ![image](https://github.com/user-attachments/assets/f89ba509-9908-4894-856d-7fdfa80f4f46)
 
 Loads and processes content of CSV files based on rows.
+> [!NOTE]
+> - Can process any number of columns, headers of currently processed file are listed in the top left corner
+> - Should be used with [EZ Extract Prompt](#EZ-Extract-Prompt) node
+> - Outputs a single string containing contents of all columns like this:
+>  ```
+>  [Header 1 = Name]:
+>  3D RENDER
+>
+>  [Header 2 = Prompt]:
+>  professional 3d render, intricate details...
+>
+>  ...
+>  ```
 
 ## **EZ Tag Loader**
 
@@ -79,10 +93,8 @@ Loads and processes content of CSV files based on rows.
 
 Loads whole lines of text based on selection.
 > [!NOTE]
-> You can add extra text after each tag, works with all selection modes and batch.
->
-> 
-> Empty lines of text are ignored, to include empty tag as an option, put "\[empty\]" as a line in .txt file with tags
+> - You can add extra text after each tag, works with all selection modes and batch.
+> - Empty lines of text are ignored, to include empty tag as an option, put "\[empty\]" as a line in .txt file with tags
 
 # Utility Nodes
 
