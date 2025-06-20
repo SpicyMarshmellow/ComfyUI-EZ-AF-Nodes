@@ -40,6 +40,8 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 
 # Nodes
 
+![image](https://github.com/user-attachments/assets/df54591f-81bb-4365-9db1-2d756b674be9)
+
 ## File Loader Nodes
 Custom UI File Loader nodes allows visually pleasing and intuitive selection of prompts, tags or rows of CSV file.
 Loader nodes can output single or multiple texts based on mode, as well as randomize selection or batch/list all texts.
