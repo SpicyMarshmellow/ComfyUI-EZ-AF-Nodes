@@ -90,7 +90,7 @@ You may find more nodes that do basic things like find & replace or input string
 
 # License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+[MIT License](LICENSE)
 
 <div align="center">
 
