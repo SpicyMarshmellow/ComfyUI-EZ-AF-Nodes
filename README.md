@@ -32,7 +32,6 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 1. Clone this repo into `custom_nodes`:
    
     ```shell
-    cd ComfyUI/custom_nodes
     git clone https://github.com/ez-af/ComfyUI-EZ-AF-Nodes.git
     ```
 2. Launch/Restart ComfyUI
