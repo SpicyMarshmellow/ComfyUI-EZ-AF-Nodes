@@ -72,5 +72,5 @@ Returns the selected input unchanged.
     def IS_CHANGED(cls, selection_mode, **kwargs):
         # Always re-execute if random selection is enabled
         if selection_mode == "by random":
-            return random.random()
+            return None
         return False
