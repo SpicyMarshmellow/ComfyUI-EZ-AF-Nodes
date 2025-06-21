@@ -67,7 +67,7 @@ comfyui-ez-af-nodes/
 ![image](https://github.com/user-attachments/assets/fafec7d1-ae31-40ac-b7ba-bb3f546ec810)
 
 Loads full content of text files based on selection. Supports image thumbnails.
-> [!NOTE]
+
 > Thumnails are only shown if there is an image (.png/.jpg) file with the name matching the .txt file in the same folder
 
 ## **EZ CSV Loader**
@@ -75,7 +75,7 @@ Loads full content of text files based on selection. Supports image thumbnails.
 ![image](https://github.com/user-attachments/assets/f89ba509-9908-4894-856d-7fdfa80f4f46)
 
 Loads and processes content of CSV files based on rows.
-> [!NOTE]
+
 > - Can process any number of columns, headers of currently processed file are listed in the top left corner
 > - Should be used with [EZ Extract Prompt](#EZ-Extract-Prompt) node
 > - Outputs a single string containing contents of all columns like this:
@@ -94,7 +94,7 @@ Loads and processes content of CSV files based on rows.
 ![image](https://github.com/user-attachments/assets/2699d058-1565-40fd-83c1-dc1004cd1374)
 
 Loads whole lines of text based on selection.
-> [!NOTE]
+
 > - You can add extra text after each tag, works with all selection modes and batch.
 > - Empty lines of text are ignored, to include empty tag as an option, put "\[empty\]" as a line in .txt file with tags
 
@@ -108,9 +108,12 @@ Dynamic input node. Combines any number of text inputs with customizable delimit
 
 ## **EZ Switch**
 
-![image](https://github.com/user-attachments/assets/dd15ae5a-320d-4cf0-8fb6-c7ca50cd84b4)
+![image](https://github.com/user-attachments/assets/ba33813a-2f5b-47da-8e79-f71c0af6dc59)
 
-Dynamic input node. Allows selection of a single input either randomly or by index.
+Dynamic input node. Allows selection of a single input in 1 of 3 scenarios:
+- **by index**: Select input by specified index
+- **by random**: Choose a random input each time
+- **automatic**: Output the first input that is not None
 
 > [!WARNING]
 > This node uses "ANY" type for both inputs and output, allowing it to pass anything, including models, images, latents, etc.
