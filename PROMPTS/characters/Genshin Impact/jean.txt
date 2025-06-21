@@ -1,0 +1,17 @@
+CHARACTER:
+jean_(genshin_impact), blonde hair, blue eyes,
+
+HAIRSTYLE:
+long hair, ponytail, side bangs,
+
+ACCESSORIES:
+gloves, shoulder armor, 
+
+TOPWEAR:
+white jacket, capelet, cleavage, strapless, detached collar, detached sleeves, corset,
+
+BOTTOMWEAR:
+white pants, belt,
+
+FOOTWEAR:
+white boots,

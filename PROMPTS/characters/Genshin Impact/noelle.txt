@@ -1,0 +1,17 @@
+CHARACTER:
+noelle_(genshin_impact), silver hair, green eyes,
+
+HAIRSTYLE:
+short hair, braid crown, blunt bangs,
+
+ACCESSORIES:
+maid headdress, gloves, rose hairclip,
+
+TOPWEAR:
+white dress, armor, red bow, puff sleeves,
+
+BOTTOMWEAR:
+layered skirt, black pantyhose,
+
+FOOTWEAR:
+armored boots,

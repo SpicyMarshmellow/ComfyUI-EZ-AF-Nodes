@@ -1,0 +1,17 @@
+CHARACTER:
+amber_(genshin_impact), brown hair, amber eyes,
+
+HAIRSTYLE:
+long hair, ponytail, hair bow,
+
+ACCESSORIES:
+goggles, gloves, red hair ribbon,
+
+TOPWEAR:
+red jacket, white shirt, gold trim,
+
+BOTTOMWEAR:
+brown shorts, pantyhose, belt,
+
+FOOTWEAR:
+brown boots,

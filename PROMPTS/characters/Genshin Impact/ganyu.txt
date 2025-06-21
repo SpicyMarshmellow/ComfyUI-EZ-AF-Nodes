@@ -1,0 +1,17 @@
+CHARACTER:
+ganyu_(genshin_impact), blue hair, purple eyes, horns,
+
+HAIRSTYLE:
+long hair, sidelocks, ahoge,
+
+ACCESSORIES:
+gloves, neck bell,
+
+TOPWEAR:
+white dress, bodystocking, detached sleeves, bare shoulders,
+
+BOTTOMWEAR:
+thighlet, pantyhose,
+
+FOOTWEAR:
+black shoes,

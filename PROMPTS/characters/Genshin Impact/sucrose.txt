@@ -1,0 +1,17 @@
+CHARACTER:
+sucrose_(genshin_impact), green hair, green eyes,
+
+HAIRSTYLE:
+short hair, bob cut, cat ear hair tufts, hairpin,
+
+ACCESSORIES:
+glasses, gloves,
+
+TOPWEAR:
+white blouse, blue vest, long sleeves,
+
+BOTTOMWEAR:
+shorts, black tights,
+
+FOOTWEAR:
+navy boots,

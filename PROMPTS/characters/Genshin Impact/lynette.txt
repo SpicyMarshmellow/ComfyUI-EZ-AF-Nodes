@@ -1,0 +1,17 @@
+CHARACTER:
+lynette_(genshin_impact), silver hair, teal eyes,
+
+HAIRSTYLE:
+short hair, bob cut, cat ears,
+
+ACCESSORIES:
+choker, black gloves,
+
+TOPWEAR:
+black bodysuit, teal trim, puff sleeves,
+
+BOTTOMWEAR:
+shorts, striped tights,
+
+FOOTWEAR:
+black shoes,

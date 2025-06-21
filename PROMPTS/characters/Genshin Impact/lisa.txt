@@ -1,0 +1,17 @@
+CHARACTER:
+lisa_(genshin_impact), brown hair, green eyes,
+
+HAIRSTYLE:
+wavy hair, long hair, braid,
+
+ACCESSORIES:
+witch hat, earrings, rose brooch, gloves,
+
+TOPWEAR:
+purple dress, corset, lace trim,
+
+BOTTOMWEAR:
+thighhighs, garter belt,
+
+FOOTWEAR:
+high heels, purple boots,

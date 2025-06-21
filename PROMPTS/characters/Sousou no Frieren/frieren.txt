@@ -1,5 +1,5 @@
 CHARACTER:
-frieren, sousou no frieren, grey hair, green eyes, elf, pointy ears,
+frieren_(sousou_no_frieren), grey hair, green eyes, elf, pointy ears,
 
 HAIRSTYLE:
 long hair, twintails, parted bangs, 

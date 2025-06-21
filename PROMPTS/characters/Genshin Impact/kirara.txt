@@ -1,0 +1,17 @@
+CHARACTER:
+kirara_(genshin_impact), green hair, yellow eyes, nekomata, cat ears,
+
+HAIRSTYLE:
+short hair, twin buns, side bangs,
+
+ACCESSORIES:
+tail, bell choker,
+
+TOPWEAR:
+green jacket, crop top,
+
+BOTTOMWEAR:
+shorts, thighhighs,
+
+FOOTWEAR:
+cat paws,

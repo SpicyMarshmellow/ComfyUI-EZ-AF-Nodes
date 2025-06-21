@@ -1,0 +1,17 @@
+CHARACTER:
+mona_(genshin_impact), black hair, green eyes,
+
+HAIRSTYLE:
+long hair, twintails,
+
+ACCESSORIES:
+witch hat, star earrings, hat ornament, choker, black gloves,
+
+TOPWEAR:
+blue leotard, highleg leotard, bodystocking, covered navel, cape, fur collar, star pattern, gold trim,
+
+BOTTOMWEAR:
+thighhighs, diamond cutouts, black pantyhose,
+
+FOOTWEAR:
+high-heeled boots,

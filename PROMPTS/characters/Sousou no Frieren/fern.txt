@@ -1,0 +1,17 @@
+CHARACTER:
+fern_(sousou_no_frieren), purple hair, purple eyes,
+
+HAIRSTYLE:
+short hair, straight hair, blunt bangs,
+
+ACCESSORIES:
+hairpin,
+
+TOPWEAR:
+tunic, long sleeves, purple cape,
+
+BOTTOMWEAR:
+belted tunic, dark tights,
+
+FOOTWEAR:
+brown boots,

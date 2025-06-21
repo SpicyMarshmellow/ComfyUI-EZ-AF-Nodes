@@ -1,0 +1,17 @@
+CHARACTER:
+xiangling_(genshin_impact), dark blue hair, red eyes,
+
+HAIRSTYLE:
+short hair, twin buns,
+
+ACCESSORIES:
+ribbons, panda accessory,
+
+TOPWEAR:
+red halter top, brown trim,
+
+BOTTOMWEAR:
+black shorts, apron, red sash, leg wraps,
+
+FOOTWEAR:
+brown sandals,
