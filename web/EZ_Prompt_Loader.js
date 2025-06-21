@@ -104,10 +104,18 @@ async function addFileBrowserUI(node) {
         for (const file of files) {
             try {
                 const imageFile = file.replace('.txt', '.png');
+                // Extract directory and filename for thumbnail request
+                const pathParts = file.split(/[/\\]/);
+                const fileName = pathParts[pathParts.length - 1];
+                const dirPath = pathParts.length > 1 ? pathParts.slice(0, -1).join('/') : '';
+                const fileDir = dirPath ? `${currentDirectory}/${dirPath}` : currentDirectory;
+                // Replace PROMPTS with THUMBNAILS in the path for thumbnail loading
+                const thumbnailDir = fileDir.replace(/prompts/g, 'thumbnails');
+                
                 const response = await fetch('/ez_file_browser/get_thumbnail', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: currentDirectory, file: imageFile })
+                    body: JSON.stringify({ path: thumbnailDir, file: fileName.replace('.txt', '.png') })
                 });
                 if (response.ok) {
                     const blob = await response.blob();
@@ -173,8 +181,15 @@ async function addFileBrowserUI(node) {
             const count = selectedFiles.size > 0 ? selectedFiles.size : files.length;
             displayText = `selecting from ${count} prompt${count !== 1 ? 's' : ''}`;
         } else {
-            // Single mode - show first selected file name
-            displayText = selectedFiles.size > 0 ? Array.from(selectedFiles)[0].split(".")[0] : "";
+            // Single mode - show first selected file name (filename only, no path)
+            if (selectedFiles.size > 0) {
+                const selectedFile = Array.from(selectedFiles)[0];
+                const pathParts = selectedFile.split(/[/\\]/);
+                const fileName = pathParts[pathParts.length - 1].split(".")[0];
+                displayText = fileName;
+            } else {
+                displayText = "";
+            }
         }
         
         // Measure text width
@@ -361,25 +376,28 @@ async function addFileBrowserUI(node) {
                 // Draw filename
                 ctx.fillStyle = COLORS.text;
                 ctx.font = "12px Arial";
-                const displayName = file.split(".")[0];
                 
+                // Get just the filename (everything after the last slash or backslash)
+                const pathParts = file.split(/[/\\]/);
+                const fileName = pathParts[pathParts.length - 1].split(".")[0];
                 // Calculate available width for text
                 const maxTextWidth = ITEM_SIZE - TEXT_PADDING * 2;
                 
+                let displayText = fileName;
+                
                 // Measure text width
-                const textMetrics = ctx.measureText(displayName);
-                let displayText = displayName;
+                const textMetrics = ctx.measureText(displayText);
                 
                 // If text is too long, truncate it
                 if (textMetrics.width > maxTextWidth) {
-                    let truncatedText = displayName;
+                    let truncatedText = fileName;
                     while (ctx.measureText(truncatedText + ELLIPSIS).width > maxTextWidth && truncatedText.length > 0) {
                         truncatedText = truncatedText.slice(0, -1);
                     }
                     displayText = truncatedText + ELLIPSIS;
                 }
                 
-                // Draw the text
+                // Draw the filename
                 ctx.fillText(displayText, xPos + TEXT_PADDING, yPos + ITEM_SIZE - TEXT_PADDING);
 
                 // Draw selection border

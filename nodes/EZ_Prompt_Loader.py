@@ -42,6 +42,7 @@ class EZ_Prompt_Loader:
     CATEGORY = "EZ NODES"
     DESCRIPTION = """
 Loads prompt text from files based on UI selection
+Searches recursively through all subdirectories within the selected folder
 Selection types:
 - single: Select one file at a time
 - multiple: Select multiple files (comma-separated)
@@ -133,8 +134,10 @@ Selection types:
         if selected_files:
             for file in selected_files.split(","):
                 file = file.strip()
-                if file and not os.path.isfile(os.path.join(prompt_directory, file)):
-                    return f"Selected file {file} does not exist"
+                if file:
+                    file_path = os.path.join(prompt_directory, file)
+                    if not os.path.isfile(file_path):
+                        return f"Selected file {file} does not exist"
         return True
 
 
@@ -153,14 +156,18 @@ def get_file_list(path, filter_text=""):
     result = []
     filter_text = (filter_text or "").lower()
 
-    for f in os.listdir(path):
-        if f.lower().endswith(".txt"):
-            base_name = os.path.splitext(f)[0]
+    # Recursively walk through all subdirectories
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            if f.lower().endswith(".txt"):
+                base_name = os.path.splitext(f)[0]
 
-            if filter_text and filter_text not in base_name.lower():
-                continue
+                if filter_text and filter_text not in base_name.lower():
+                    continue
 
-            result.append(f)
+                # Get relative path from the root directory
+                rel_path = os.path.relpath(os.path.join(root, f), path)
+                result.append(rel_path)
 
     return result
 
