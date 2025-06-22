@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-ez-af-nodes"
 description = "Conveniently control parts of text prompts with custom UI. Pack includes loaders from txt and csv files, dynamic text concatenation tool, dynamic switch and more"
-version = "2.1.0"
+version = "2.1.1"
 license = {file = "LICENSE"}
 
 [project.urls]
@@ -11,4 +11,4 @@ Repository = "https://github.com/ez-af/ComfyUI-EZ-AF-Nodes"
 [tool.comfy]
 PublisherId = "ez-af"
 DisplayName = "ComfyUI-EZ-AF-Nodes"
-Icon = ""
+Icon = "https://avatars.githubusercontent.com/u/179777855"
