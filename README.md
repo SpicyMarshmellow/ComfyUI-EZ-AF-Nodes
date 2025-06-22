@@ -44,20 +44,21 @@ Pack includes loaders from txt and csv files, dynamic text concatenation tool an
 
 ## File Loader Nodes
 Custom UI File Loader nodes allows visually pleasing and intuitive selection of prompts, tags or rows of CSV file.
-Loader nodes can output single or multiple texts based on mode, as well as randomize selection or batch/list all texts.
+Loader nodes can output single or multiple texts based on mode, as well as randomize selection or batch/list all selected items.
 Loader nodes keep selections on workflow load or page refresh.
 
 ### Selection modes:
 - single: Select one item at a time. Output 1 item at a time.
 - multiple: Select multiple items. Output will be concatenated with a comma.
-- random: Randomly select one item from selection on each prompt queue. If less than 2 items are selected, will draw randomly from all items.
+- random: Randomly select one item from selection on each prompt queue. If selection is empty Can be controlled by an optional seed input. In that case node will not re-execute when seed is fixed.
 
 ### File Structure
-Files are loaded from directories and subdirectories within `comfyui-ez-af-nodes` project, populate these directories with your custom presets as you like
+Files are loaded from directories and subdirectories within `comfyui-ez-af-nodes/data` folder, populate these directories with your custom presets as you like.
 
 ```
-comfyui-ez-af-nodes/
-├── PROMPTS/          # For prompt text files and thumbnails
+comfyui-ez-af-nodes/data
+├── PROMPTS/          # For prompt text files
+├── THUMBNAILS/       # For thumbnails
 ├── CSV/              # For CSV data files  
 └── TAGS/             # For tag files
 ```
@@ -112,12 +113,12 @@ Dynamic input node. Combines any number of text inputs with customizable delimit
 
 Dynamic input node. Allows selection of a single input in 1 of 3 scenarios:
 - **by index**: Select input by specified index
-- **by random**: Choose a random input each time
+- **by random**: Choose a random input each time. Always re-executes unless opt_seed input is connected.
 - **automatic**: Output the first input that is not None
 
 > [!WARNING]
 > This node uses "ANY" type for both inputs and output, allowing it to pass anything, including models, images, latents, etc.
-> This node doesn't do any processing with inputs it gets, so if you try to pass its output to a node that does not expect certain type, you will get an error.
+> This node doesn't do any processing with inputs, so if you try to pass its output to a node that does not expect certain type, you will get an error.
 
 ## **EZ Extract Prompt**
 
@@ -137,7 +138,8 @@ You may find more nodes that do basic things like find & replace or input string
 
 # Example Workflow
 
-*To be added*
+[Download example](example_workflow.json)
+Drag and drop this file to open ComfyUI tab/window to load the workflow with notes
 
 # License
 
