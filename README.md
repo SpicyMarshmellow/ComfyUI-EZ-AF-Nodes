@@ -139,6 +139,7 @@ You may find more nodes that do basic things like find & replace or input string
 # Example Workflow
 
 [Download example](<example workflow.json>)
+
 Drag and drop this file to open ComfyUI tab/window to load the workflow with notes
 
 # License
