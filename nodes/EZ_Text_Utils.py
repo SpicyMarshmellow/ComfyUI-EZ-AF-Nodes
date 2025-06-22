@@ -5,22 +5,19 @@ class EZ_Extract_Prompt:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "string": ("STRING", {"multiline": True, "default": "", "forceInput": True}),
-                "searchword": ("STRING", {"multiline": False, "default": ""}),
-                "extract_all": ("BOOLEAN", {"default": False}),
+                "string": ("STRING", {"multiline": True, "default": "", "forceInput": True, "tooltip": "Text to be processed."}),
+                "searchword": ("STRING", {"multiline": False, "default": "", "tooltip": "Header name to be searched."}),
+                "extract_all": ("BOOLEAN", {"default": False, "tooltip": "If true, will extract the original text of all headers, removing extra line breaks."}),
             },
         }
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "extract_prompt"
+    OUTPUT_TOOLTIPS = ("Processed text.",)
+
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Extracts full lines of text from input text based on the header provided in input
 
-If "extract_all" is set ot true, node will return the original text with all headers removed
-
-Use with EZ_CSV_Loader to extract text content based on header name
-"""
+    DESCRIPTION = "Extracts lines of text based on the searchword"
 
     def extract_prompt(self, string, searchword, extract_all):
         if extract_all:
@@ -69,9 +66,7 @@ class EZ_Find_Replace:
     RETURN_TYPES = ("STRING",)
     FUNCTION = "find_replace"
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Finds and replaces all instances of text string
-"""
+    DESCRIPTION = "Finds and replaces all instances of text string."
 
     def find_replace(self, string, find, replace):
         string = string.replace(find, replace)
@@ -90,9 +85,7 @@ class EZ_Text_to_Size:
     RETURN_NAMES = ("WIDTH", "HEIGHT",)
     FUNCTION = "extract_size"
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Extract the last 2 numbers found within a text string to be used as width and height
-"""
+    DESCRIPTION = "Extract the last 2 numbers found within a text string to be used as width and height."
 
     def extract_size(self, text_input):
         try:

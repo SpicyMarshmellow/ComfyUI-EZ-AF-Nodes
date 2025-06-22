@@ -15,7 +15,11 @@ class EZ_Input:
 
     RETURN_TYPES = (any, )
     RETURN_NAMES = ("STRING", )
+    
+    OUTPUT_TOOLTIPS = ("Multiline string that may be input in 'combo' input slot.",)
+
     FUNCTION = "doit"
+
     CATEGORY = "EZ NODES"
     DESCRIPTION = """
 This node outputs multiline string but assigns "ANY" type to it.

@@ -20,7 +20,7 @@ class EZ_Test:
 
         return {
             "required": {
-                "prompt_directory": (prompt_dirs,)
+                "prompt_directory": (prompt_dirs, {"tooltip": "tip"})
             },
             # "optional": {
             #     "selected_file": ("STRING", {"default": ""}),

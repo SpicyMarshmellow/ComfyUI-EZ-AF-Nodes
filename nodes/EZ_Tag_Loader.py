@@ -24,13 +24,18 @@ class EZ_Tag_Loader:
 
         return {
             "required": {
-                "tags_file": (txt_files,),
-                "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
+                "tags_file": (txt_files, {"tooltip": "Text file to search for tags"}),
+                "selection_mode": (["single", "multiple", "random"], {"default": "single", "tooltip":
+                                                                        "- single: Allows selection of one item at a time.\n"
+                                                                        "- multiple: Allows selection of multiple items. Output will be comma-separated.\n"
+                                                                        "- random: Allows selection of multiple items. Randomly outputs one of the selected items on each prompt queue."
+                                                                        " Will select from all visible (filtered) items if none or single item is selected."
+                                                                        " Uses seed if opt_seed is connected. Always re-executes node if opt_seed is not connected"}),
             },
             "optional": {
-                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True}),
-                "filter_text": ("STRING", {"default": ""}),
-                "add_after": ("STRING", {"default": ""}),
+                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True, "tooltip": "Control SEED, used only in 'random' selection mode.\nIf not connected, always re-executes node on prompt"}),
+                "filter_text": ("STRING", {"default": "", "tooltip": "Filter items based on a text string"}),
+                "add_after": ("STRING", {"default": "", "tooltip": "Add text string after each tag (space-separated)"}),
                 "selected_tags": ("STRING", {"default": ""}),
             }
         }
@@ -38,18 +43,12 @@ class EZ_Tag_Loader:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("STRING", "OPT_FILEPATH", "BATCH_SELECTED")
     OUTPUT_IS_LIST = (False, False, True)
+    OUTPUT_TOOLTIPS = ("Selected tag(s).\nDelimited by comma if multiple","Path to currently selected text file containing tags.","List of all selected items.\nWill output all visible (filtered) items if none or single item is selected.")
 
     FUNCTION = "browse_tags"
 
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Loads tags from a text file based on UI selection
-Each line in the text file is considered a separate tag
-Selection types:
-- single: Select one tag at a time
-- multiple: Select multiple tags (comma-separated)
-- random: Randomly select one tag on each prompt queue
-"""
+    DESCRIPTION = "Loads tags from selected text file based on UI selection."
 
     def browse_tags(self, tags_file, selection_mode="single", selected_tags="", filter_text="", add_after="", opt_seed=0):
         global tags_path

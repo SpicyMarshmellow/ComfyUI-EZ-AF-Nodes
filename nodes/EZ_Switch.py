@@ -11,9 +11,15 @@ class EZ_Switch: # logic for dynamic inputs stolen from Bjornulf nodes. Inspired
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "number_of_inputs": ("INT", {"default": 2, "min": 2, "max": 50, "step": 1}),
-                "selected_index": ("INT", {"default": 1, "min": 1, "max": 50, "step": 1}),
-                "selection_mode": (["by index", "by random", "automatic"], {"default": "by index"}),
+                "number_of_inputs": ("INT", {"default": 2, "min": 2, "max": 50, "step": 1, "tooltip": "Dynamically select number of inputs. Only the last of current inputs may be affected when this value is changed"}),
+                "selected_index": ("INT", {"default": 1, "min": 1, "max": 50, "step": 1, "tooltip": "Index of input to be passed to output (if in 'by index' mode)"}),
+                "selection_mode": (["by index", "by random", "automatic"], {"default": "by index", "tooltip": "modes:\n"
+                                                                                            "- by index: Select input by specifying index\n"
+                                                                                            "- by random: Choose a random input each time\n"
+                                                                                            "- automatic: Output the first input that is not None"}),
+            },
+            "optional": {
+                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True, "tooltip": "Control SEED, used only in 'by random' selection mode.\nIf not connected, always re-executes node on prompt"}),
             },
             "hidden": {
                 **{f"input_{i}": ("*", {"forceInput": "True"}) for i in range(1, 51)}
@@ -21,18 +27,16 @@ class EZ_Switch: # logic for dynamic inputs stolen from Bjornulf nodes. Inspired
         }
 
     RETURN_TYPES = (any,)
+
+    OUTPUT_TOOLTIPS = ("Unprocessed value of any type.",)
+
     FUNCTION = "switch"
+
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Switch between multiple inputs based on selection mode.
+    DESCRIPTION = "Switch between any number of inputs automatically, based on index or randomly."
 
-- "by index": Select input by specified index
-- "by random": Choose a random input each time
-- "automatic": Output the first input that is not None
-Returns the selected input unchanged.
-"""
 
-    def switch(self, number_of_inputs, selection_mode, selected_index=None, **kwargs):
+    def switch(self, number_of_inputs, selection_mode, selected_index=None, opt_seed=0, **kwargs):
         if selection_mode == "by index":
             # For non-random selection, only read the specific input needed (original logic)
             if selected_index is None:
@@ -44,6 +48,10 @@ Returns the selected input unchanged.
                 return (None,)
         
         elif selection_mode == "by random":
+            # Use seed for deterministic random selection only if opt_seed is provided and not 0
+            if opt_seed is not None and opt_seed != 0:
+                random.seed(opt_seed)
+            
             # If random_selection is enabled, we need to read all inputs for random selection
             inputs = [] 
             for k in sorted(kwargs.keys()):
@@ -69,8 +77,12 @@ Returns the selected input unchanged.
             return (None,)
     
     @classmethod
-    def IS_CHANGED(cls, selection_mode, **kwargs):
+    def IS_CHANGED(cls, selection_mode, opt_seed=0, **kwargs):
         # Always re-execute if random selection is enabled
         if selection_mode == "by random":
-            return None
+            # For random mode, include seed in the hash only if opt_seed is provided and not 0
+            if opt_seed is not None and opt_seed != 0:
+                return str(opt_seed) + str(selection_mode)
+            else:
+                return float('nan')  # Fall back to normal random behavior
         return False

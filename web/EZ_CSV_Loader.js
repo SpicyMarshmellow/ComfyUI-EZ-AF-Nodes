@@ -32,7 +32,7 @@ async function addCSVBrowserUI(node) {
     filterTextWidget.hidden = false;
 
     const MIN_WIDTH = 310;
-    const MIN_HEIGHT = 360;
+    const MIN_HEIGHT = 400;
     const TOP_PADDING = 250;
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
@@ -45,7 +45,7 @@ async function addCSVBrowserUI(node) {
     const TEXT_PADDING = 10; // Padding for text within row
     const PREVIEW_PADDING = 20; // Padding for preview text
     const PREVIEW_SKIP = 152; // Skip for preview text
-    const HEADERS_SKIP = 224; // Skip for headers preview
+    const HEADERS_SKIP = 225; // Skip for headers preview
     const BORDER_RADIUS = 0;
     const SELECTION_BORDER_RADIUS = 0;
     const SELECTION_BORDER_PADDING = 0;

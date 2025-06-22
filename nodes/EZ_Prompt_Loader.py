@@ -24,12 +24,17 @@ class EZ_Prompt_Loader:
 
         return {
             "required": {
-                "prompt_directory": (prompt_dirs,),
-                "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
+                "prompt_directory": (prompt_dirs, {"tooltip": "Directory to search for prompt files.\nSearches recursively through all subdirectories."}),
+                "selection_mode": (["single", "multiple", "random"], {"default": "single", "tooltip":
+                                                                        "- single: Allows selection of one item at a time.\n"
+                                                                        "- multiple: Allows selection of multiple items. Output will be comma-separated.\n"
+                                                                        "- random: Allows selection of multiple items. Randomly outputs one of the selected items on each prompt queue."
+                                                                        " Will select from all visible (filtered) items if none or single item is selected."
+                                                                        " Uses seed if opt_seed is connected. Always re-executes node if opt_seed is not connected"}),
             },
             "optional": {
-                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True}),
-                "filter_text": ("STRING", {"default": ""}),
+                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True, "tooltip": "Control SEED, used only in 'random' selection mode.\nIf not connected, always re-executes node on prompt"}),
+                "filter_text": ("STRING", {"default": "", "tooltip": "Filter items based on a text string"}),
                 "selected_files": ("STRING", {"default": ""}),
             }
         }
@@ -37,18 +42,12 @@ class EZ_Prompt_Loader:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("STRING", "OPT_DIRECTORY", "BATCH_SELECTED")
     OUTPUT_IS_LIST = (False, False, True)
+    OUTPUT_TOOLTIPS = ("Content of selected prompt file(s).\nDelimited by comma if multiple","Path to currently selected directory.","List of all selected items.\nWill output all visible (filtered) items if none or single item is selected.")
 
     FUNCTION = "browse_files"
 
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Loads prompt text from files based on UI selection
-Searches recursively through all subdirectories within the selected folder
-Selection types:
-- single: Select one file at a time
-- multiple: Select multiple files (comma-separated)
-- random: Randomly select one file on each prompt queue
-"""
+    DESCRIPTION = "Loads prompt texts from files based on UI selection.\nSearches recursively through all subdirectories within the selected folder."
 
     def browse_files(self, prompt_directory, selection_mode="single", selected_files="", filter_text="", opt_seed=0):
         global prompts_path

@@ -25,12 +25,17 @@ class EZ_CSV_Loader:
 
         return {
             "required": {
-                "csv_file": (csv_files,),
-                "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
+                "csv_file": (csv_files, {"tooltip": "CSV file to search for text by row"}),
+                "selection_mode": (["single", "multiple", "random"], {"default": "single", "tooltip":
+                                                                        "- single: Allows selection of one item at a time.\n"
+                                                                        "- multiple: Allows selection of multiple items. Output will be comma-separated.\n"
+                                                                        "- random: Allows selection of multiple items. Randomly outputs one of the selected items on each prompt queue."
+                                                                        " Will select from all visible (filtered) items if none or single item is selected."
+                                                                        " Uses seed if opt_seed is connected. Always re-executes node if opt_seed is not connected"}),
             },
             "optional": {
-                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True}),
-                "filter_text": ("STRING", {"default": ""}),
+                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True, "tooltip": "Control SEED, used only in 'random' selection mode.\nIf not connected, always re-executes node on prompt"}),
+                "filter_text": ("STRING", {"default": "", "tooltip": "Filter items based on a text string"}),
                 "selected_row": ("STRING", {"default": ""}),
             }
         }
@@ -38,18 +43,12 @@ class EZ_CSV_Loader:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("STRING", "OPT_FILEPATH", "BATCH_SELECTED")
     OUTPUT_IS_LIST = (False, False, True)
+    OUTPUT_TOOLTIPS = ("Content of selected row(s).\nUsually needs to be processed by Prompt Extractor","Path to currently selected csv file.","List of all selected items.\nWill output all visible (filtered) items if none or single item is selected.")
 
     FUNCTION = "browse_csv"
 
     CATEGORY = "EZ NODES"
-    DESCRIPTION = """
-Loads rows from a CSV file based on UI selection
-Each row in the CSV is selectable; the first row is used as headers
-Selection types:
-- single: Select one row at a time
-- multiple: Select multiple rows (comma-separated indices)
-- random: Randomly select one row on each prompt queue
-"""
+    DESCRIPTION = "Loads rows from selected csv file based on UI selection.\nFirst column is always used to provide labels for UI."
 
     def browse_csv(self, csv_file, selection_mode="single", selected_row="", filter_text="", opt_seed=0):
         global csv_path
