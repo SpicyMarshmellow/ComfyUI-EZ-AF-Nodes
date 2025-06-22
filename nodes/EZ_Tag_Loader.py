@@ -5,7 +5,7 @@ from aiohttp import web
 import json
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
-tags_path = os.path.abspath(os.path.join(root_dir, "../tags"))
+tags_path = os.path.abspath(os.path.join(root_dir, "../data/tags"))
 
 class EZ_Tag_Loader:
     @classmethod

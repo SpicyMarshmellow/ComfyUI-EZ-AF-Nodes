@@ -6,7 +6,7 @@ import json
 import csv
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
-csv_path = os.path.abspath(os.path.join(root_dir, "../csv"))
+csv_path = os.path.abspath(os.path.join(root_dir, "../data/csv"))
 
 class EZ_CSV_Loader:
     @classmethod

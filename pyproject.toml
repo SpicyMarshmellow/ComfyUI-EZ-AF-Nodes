@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-ez-af-nodes"
-description = "Conveniently control parts of text prompts with custom UI. Pack includes loaders from txt and csv files, dynamic text concatenation tool and easy-to-use input node"
-version = "2.0.0"
+description = "Conveniently control parts of text prompts with custom UI. Pack includes loaders from txt and csv files, dynamic text concatenation tool, dynamic switch and more"
+version = "2.1.0"
 license = {file = "LICENSE"}
 
 [project.urls]

@@ -6,7 +6,7 @@ import io
 import random
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
-prompts_path = os.path.abspath(os.path.join(root_dir, "../prompts"))
+prompts_path = os.path.abspath(os.path.join(root_dir, "../data/prompts"))
 
 class EZ_Prompt_Loader:
     @classmethod

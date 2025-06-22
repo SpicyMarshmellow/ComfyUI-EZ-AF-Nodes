@@ -7,7 +7,8 @@ class EZ_Extract_Prompt:
             "required": {
                 "string": ("STRING", {"multiline": True, "default": "", "forceInput": True, "tooltip": "Text to be processed."}),
                 "searchword": ("STRING", {"multiline": False, "default": "", "tooltip": "Header name to be searched."}),
-                "extract_all": ("BOOLEAN", {"default": False, "tooltip": "If true, will extract the original text of all headers, removing extra line breaks."}),
+                "extract_all": ("BOOLEAN", {"default": False, "tooltip": "If true, extracts the original text of all headers, removing extra line breaks."}),
+                "pass_original": ("BOOLEAN", {"default": False, "tooltip": "If true, passes the original input to output when no searchword is found."}),
             },
         }
 
@@ -19,7 +20,7 @@ class EZ_Extract_Prompt:
 
     DESCRIPTION = "Extracts lines of text based on the searchword"
 
-    def extract_prompt(self, string, searchword, extract_all):
+    def extract_prompt(self, string, searchword, extract_all, pass_original):
         if extract_all:
             result = []
             for line in string.splitlines():
@@ -48,7 +49,13 @@ class EZ_Extract_Prompt:
                 break
             lines_out.append(line)
 
-        return ("\n".join(lines_out),)
+        result = "\n".join(lines_out)
+        
+        # If no content was extracted and pass_original is True, return the original string
+        if not result.strip() and pass_original:
+            return (string,)
+        
+        return (result,)
         
 class EZ_Find_Replace:
     @classmethod
@@ -91,8 +98,8 @@ class EZ_Text_to_Size:
         try:
             # Handle None or empty input
             if text_input is None or text_input == "":
-                print("EZ_Text_to_Size: No input provided, using default 1024x1024")
-                return (1024, 1024,)
+                print("EZ_Text_to_Size: No input provided.")
+                return (None)
             
             # Convert to string to ensure we're working with a string
             text_input = str(text_input)
@@ -102,16 +109,14 @@ class EZ_Text_to_Size:
             
             # Check if we have at least 2 numbers
             if len(numbers) < 2:
-                print(f"EZ_Text_to_Size: Need at least 2 numbers, found {len(numbers)} in '{text_input}'. Using default 1024x1024")
-                return (1024, 1024,)
+                print(f"EZ_Text_to_Size: Need at least 2 numbers, found {len(numbers)} in '{text_input}'.")
+                return (None)
             
             # Return last two numbers as width and height
             width = int(numbers[-2])
             height = int(numbers[-1])
-            
-            print(f"EZ_Text_to_Size: Extracted {width}x{height} from '{text_input}'")
             return (width, height,)
             
         except Exception as e:
-            print(f"EZ_Text_to_Size: Error processing input '{text_input}': {str(e)}. Using default 1024x1024")
-            return (1024, 1024,)
+            print(f"EZ_Text_to_Size: Error processing input '{text_input}': {str(e)}.")
+            return (None)
