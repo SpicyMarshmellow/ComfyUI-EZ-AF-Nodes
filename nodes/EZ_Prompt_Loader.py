@@ -28,6 +28,7 @@ class EZ_Prompt_Loader:
                 "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
             },
             "optional": {
+                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True}),
                 "filter_text": ("STRING", {"default": ""}),
                 "selected_files": ("STRING", {"default": ""}),
             }
@@ -49,7 +50,7 @@ Selection types:
 - random: Randomly select one file on each prompt queue
 """
 
-    def browse_files(self, prompt_directory, selection_mode="single", selected_files="", filter_text=""):
+    def browse_files(self, prompt_directory, selection_mode="single", selected_files="", filter_text="", opt_seed=0):
         global prompts_path
         prompt_directory = os.path.join(prompts_path, prompt_directory)
         prompt_directory = os.path.abspath(prompt_directory)
@@ -63,6 +64,9 @@ Selection types:
         # Handle different selection types
         selected_list = []
         if selection_mode == "random":
+            # Use seed for deterministic random selection only if opt_seed is provided and not 0
+            if opt_seed is not None and opt_seed != 0:
+                random.seed(opt_seed)
             if selected_files:
                 selected_files_list = [f.strip() for f in selected_files.split(",")]
                 valid_selected_files = [f for f in selected_files_list if f in files]
@@ -119,13 +123,17 @@ Selection types:
         return (prompt_text, prompt_directory, all_output)
 
     @classmethod
-    def IS_CHANGED(cls, prompt_directory, selection_mode, selected_files="", filter_text=""):
+    def IS_CHANGED(cls, prompt_directory, selection_mode, selected_files="", filter_text="", opt_seed=0):
         if selection_mode == "random":
-            return float('nan')
+            # For random mode, include seed in the hash only if opt_seed is provided and not 0
+            if opt_seed is not None and opt_seed != 0:
+                return str(opt_seed) + str(prompt_directory) + str(selection_mode) + str(filter_text)
+            else:
+                return float('nan')  # Fall back to normal random behavior
         return selected_files + str(prompt_directory) + str(selection_mode)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, prompt_directory, selected_files="", selection_mode="single"):
+    def VALIDATE_INPUTS(cls, prompt_directory, selection_mode="single", selected_files="", filter_text="", opt_seed=0):
         global prompts_path
         prompt_directory = os.path.join(prompts_path, prompt_directory)
         prompt_directory = os.path.abspath(prompt_directory)

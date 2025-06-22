@@ -33,7 +33,7 @@ async function addCSVBrowserUI(node) {
 
     const MIN_WIDTH = 310;
     const MIN_HEIGHT = 360;
-    const TOP_PADDING = 212;
+    const TOP_PADDING = 250;
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
     const TOP_BAR_HEIGHT = 0;
@@ -45,12 +45,12 @@ async function addCSVBrowserUI(node) {
     const TEXT_PADDING = 10; // Padding for text within row
     const PREVIEW_PADDING = 20; // Padding for preview text
     const PREVIEW_SKIP = 152; // Skip for preview text
-    const HEADERS_SKIP = 20; // Skip for headers preview
+    const HEADERS_SKIP = 224; // Skip for headers preview
     const BORDER_RADIUS = 0;
     const SELECTION_BORDER_RADIUS = 0;
     const SELECTION_BORDER_PADDING = 0;
     const ELLIPSIS = "...";
-    const HEADERS_LINE_HEIGHT = 12; // Adjustable line height for headers preview
+    const HEADERS_LINE_HEIGHT = 14; // Adjustable line height for headers preview
 
     const COLORS = {
         background: "#1e1e1e",
@@ -144,59 +144,27 @@ async function addCSVBrowserUI(node) {
 
     function drawHeadersPreview(ctx) {
         ctx.fillStyle = COLORS.headers;
-        ctx.font = "10px Arial";
-        const maxWidth = node.size[0] - PREVIEW_PADDING * 2 - 40;
-        let lines = [];
+        ctx.font = "11px Arial";
+        const maxWidth = node.size[0] - PREVIEW_PADDING * 2 - 2;
         
+        // First line: Show "N headers:" where N is the number of headers
+        const headerCount = headers.length;
+        ctx.fillText(`${headerCount} Headers:`, PREVIEW_PADDING, HEADERS_SKIP);
+        
+        // Second line: Headers separated by " | "
         if (headers.length > 0) {
-            // Always show first 2 headers
-            for (let i = 0; i < Math.min(2, headers.length); i++) {
-                let header = headers[i];
-                if (ctx.measureText(`${i + 1}. ${header}`).width > maxWidth) {
-                    let truncated = header;
-                    while (ctx.measureText(`${i + 1}. ${truncated}${ELLIPSIS}`).width > maxWidth && truncated.length > 0) {
-                        truncated = truncated.slice(0, -1);
-                    }
-                    header = truncated + ELLIPSIS;
+            let headerString = headers.join(" | ");
+            
+            // If too long, truncate with ellipsis
+            if (ctx.measureText(headerString).width > maxWidth) {
+                let truncated = headerString;
+                while (ctx.measureText(truncated + ELLIPSIS).width > maxWidth && truncated.length > 0) {
+                    truncated = truncated.slice(0, -1);
                 }
-                lines.push(`${i + 1}. ${header}`);
+                headerString = truncated + ELLIPSIS;
             }
             
-            // Handle 3rd line
-            if (headers.length === 3) {
-                // Show 3rd header
-                let header = headers[2];
-                if (ctx.measureText(`3. ${header}`).width > maxWidth) {
-                    let truncated = header;
-                    while (ctx.measureText(`3. ${truncated}${ELLIPSIS}`).width > maxWidth && truncated.length > 0) {
-                        truncated = truncated.slice(0, -1);
-                    }
-                    header = truncated + ELLIPSIS;
-                }
-                lines.push(`3. ${header}`);
-            } else if (headers.length > 4) {
-                // Show "..." for 3rd line
-                lines.push("...");
-            }
-            
-            // Handle 4th line
-            if (headers.length > 4) {
-                // Show last header
-                let header = headers[headers.length - 1];
-                if (ctx.measureText(`${headers.length}. ${header}`).width > maxWidth) {
-                    let truncated = header;
-                    while (ctx.measureText(`${headers.length}. ${truncated}${ELLIPSIS}`).width > maxWidth && truncated.length > 0) {
-                        truncated = truncated.slice(0, -1);
-                    }
-                    header = truncated + ELLIPSIS;
-                }
-                lines.push(`${headers.length}. ${header}`);
-            }
-        }
-        
-        // Draw up to 4 lines
-        for (let i = 0; i < Math.min(lines.length, 4); i++) {
-            ctx.fillText(lines[i], PREVIEW_PADDING, HEADERS_SKIP + HEADERS_LINE_HEIGHT * i);
+            ctx.fillText(headerString, PREVIEW_PADDING, HEADERS_SKIP + HEADERS_LINE_HEIGHT);
         }
     }
 

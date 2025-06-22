@@ -28,6 +28,7 @@ class EZ_Tag_Loader:
                 "selection_mode": (["single", "multiple", "random"], {"default": "single"}),
             },
             "optional": {
+                "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True}),
                 "filter_text": ("STRING", {"default": ""}),
                 "add_after": ("STRING", {"default": ""}),
                 "selected_tags": ("STRING", {"default": ""}),
@@ -50,7 +51,7 @@ Selection types:
 - random: Randomly select one tag on each prompt queue
 """
 
-    def browse_tags(self, tags_file, selection_mode="single", selected_tags="", filter_text="", add_after=""):
+    def browse_tags(self, tags_file, selection_mode="single", selected_tags="", filter_text="", add_after="", opt_seed=0):
         global tags_path
         tags_file = os.path.join(tags_path, tags_file)
         tags_file = os.path.abspath(tags_file)
@@ -83,6 +84,9 @@ Selection types:
         # Handle different selection modes
         selected_list = []
         if selection_mode == "random":
+            # Use seed for deterministic random selection only if opt_seed is provided and not 0
+            if opt_seed is not None and opt_seed != 0:
+                random.seed(opt_seed)
             if selected_tags:
                 selected_tags_list = [tag.strip() for tag in selected_tags.split(",")]
                 valid_selected_tags = [tag for tag in selected_tags_list if tag in tags]
@@ -125,13 +129,17 @@ Selection types:
         return (main_output, tags_file, all_output)
 
     @classmethod
-    def IS_CHANGED(cls, tags_file, selection_mode, selected_tags="", filter_text="", add_after=""):
+    def IS_CHANGED(cls, tags_file, selection_mode, selected_tags="", filter_text="", add_after="", opt_seed=0):
         if selection_mode == "random":
-            return float('nan')
+            # For random mode, include seed in the hash only if opt_seed is provided and not 0
+            if opt_seed is not None and opt_seed != 0:
+                return str(opt_seed) + str(tags_file) + str(selection_mode) + str(filter_text)
+            else:
+                return float('nan')  # Fall back to normal random behavior
         return selected_tags + str(tags_file) + str(selection_mode) + str(add_after)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, tags_file, selected_tags="", add_after="", selection_mode="single"):
+    def VALIDATE_INPUTS(cls, tags_file, selection_mode="single", selected_tags="", filter_text="", add_after="", opt_seed=0):
         global tags_path
         tags_file = os.path.join(tags_path, tags_file)
         tags_file = os.path.abspath(tags_file)
