@@ -69,7 +69,7 @@ comfyui-ez-af-nodes/data
 
 Loads full content of text files based on selection. Supports image thumbnails.
 
-> Thumnails are only shown if there is an image (.png/.jpg) file with the name matching the .txt file in the same folder
+> Thumnails are only shown if there is an image (.png) file with the name matching the .txt file in the `thumbnails` folder (relative directory structure also needs to match)
 
 ## **EZ CSV Loader**
 
