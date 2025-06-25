@@ -2,7 +2,7 @@
 
 # EZ-AF Nodes for ComfyUI
 
-[Installation](#installation) | [Nodes](#nodes) | [Example](#example_workflow)
+[Installation](#installation) | [Nodes](#nodes) | [Example](#example)
 
 </div>
 
@@ -136,9 +136,9 @@ Extracts width and height values from text strings (always uses the last 2 found
 ## **Other Text Utilities**
 You may find more nodes that do basic things like find & replace or input string, i keep them for myself for testing purposes, i recommend using built-in comfy core nodes instead
 
-# Example Workflow
+# Example
 
-[Download example](<example workflow.json>)
+[Download example workflow](<example workflow.json>)
 
 Drag and drop this file to ComfyUI tab/window to load the workflow with notes
 
