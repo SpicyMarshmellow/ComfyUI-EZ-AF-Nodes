@@ -2,7 +2,7 @@
 
 # EZ-AF Nodes for ComfyUI
 
-[Installation](#installation) | [Nodes](#nodes) | [Example](#example)
+[Installation](#installation) | [Nodes](#nodes) | [Example](#example_workflow)
 
 </div>
 
