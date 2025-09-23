@@ -1,0 +1,11 @@
+[empty]
+necklace
+earrings
+bracelet
+rings
+tiara
+crown
+clutch
+handbag
+hair clips
+choker
