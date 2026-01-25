@@ -3,62 +3,63 @@ import { app } from "../../../scripts/app.js";
 // Code largely inspired by FILL NODES, credit to the author: https://github.com/filliptm/ComfyUI_Fill-Nodes
 
 app.registerExtension({
-    name: "Comfy.EZ_Tag_Loader",
+    name: "Comfy.EZ_CSV_Loader",
     async nodeCreated(node) {
-        if (node.comfyClass === "EZ_Tag_Loader") {
-            addTagBrowserUI(node);
+        if (node.comfyClass === "EZ_CSV_Loader") {
+            addCSVBrowserUI(node);
         }
     }
 });
 
-async function addTagBrowserUI(node) {
+async function addCSVBrowserUI(node) {
     // Tweakable variables
     const CLICK_Y_OFFSET = 0;
     const CLICK_X_OFFSET = -2;
 
-    const tagsFileWidget = node.widgets.find(w => w.name === "tags_file");
-    const selectedTagsWidget = node.widgets.find(w => w.name === "selected_tags");
+    const csvFileWidget = node.widgets.find(w => w.name === "csv_file");
+    const selectedRowWidget = node.widgets.find(w => w.name === "selected_row");
     const selectionModeWidget = node.widgets.find(w => w.name === "selection_mode");
     const filterTextWidget = node.widgets.find(w => w.name === "filter_text");
-    const addAfterWidget = node.widgets.find(w => w.name === "add_after");
 
-    if (!tagsFileWidget || !selectedTagsWidget || !selectionModeWidget || !filterTextWidget || !addAfterWidget) {
-        console.error("Required widgets not found:", { tagsFileWidget, selectedTagsWidget, selectionModeWidget, filterTextWidget, addAfterWidget });
+    if (!csvFileWidget || !selectedRowWidget || !selectionModeWidget || !filterTextWidget) {
+        console.error("Required widgets not found:", { csvFileWidget, selectedRowWidget, selectionModeWidget, filterTextWidget });
         return;
     }
 
-    tagsFileWidget.hidden = false;
-    selectedTagsWidget.hidden = true;
+    csvFileWidget.hidden = false;
+    selectedRowWidget.hidden = true;
     selectionModeWidget.hidden = false;
     filterTextWidget.hidden = false;
-    addAfterWidget.hidden = false;
 
     const MIN_WIDTH = 310;
-    const MIN_HEIGHT = 380;
-    const TOP_PADDING = 235;
+    const MIN_HEIGHT = 400;
+    const TOP_PADDING = 250;
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
     const TOP_BAR_HEIGHT = 0;
-    const TAG_HEIGHT = 28;
-    const TAG_PADDING = 5;
-    const EXTRA_TAG_PADDING = 2;
+    const ROW_HEIGHT = 28;
+    const ROW_PADDING = 5;
+    const EXTRA_ROW_PADDING = 2;
     const SCROLLBAR_WIDTH = 13;
     const MIN_COLUMN_WIDTH = 150; // Minimum width for a column
-    const TEXT_PADDING = 10; // Padding for text within tag
+    const TEXT_PADDING = 10; // Padding for text within row
     const PREVIEW_PADDING = 20; // Padding for preview text
-    const PREVIEW_SKIP = 176; // Skip for preview text
+    const PREVIEW_SKIP = 152; // Skip for preview text
+    const HEADERS_SKIP = 225; // Skip for headers preview
     const BORDER_RADIUS = 0;
     const SELECTION_BORDER_RADIUS = 0;
     const SELECTION_BORDER_PADDING = 0;
     const ELLIPSIS = "...";
+    const HEADERS_LINE_HEIGHT = 14; // Adjustable line height for headers preview
 
     const COLORS = {
         background: "#1e1e1e",
         topBar: "#252526",
-        tag: "#2d2d30",
-        tagHover: "#3e3e42",
-        tagSelected: "#0e639c",
+        row: "#2d2d30",
+        rowHover: "#3e3e42",
+        rowSelected: "#0e639c",
         text: "#ffffff",
+        headers: "#a9a9a9",
         scrollbar: "#3e3e42",
         scrollbarHover: "#505050",
         divider: "#4f0074",
@@ -67,16 +68,17 @@ async function addTagBrowserUI(node) {
 
     let currentFile = null;
     let filterText = filterTextWidget.value;
-    let selectedTags = new Set();
-    let tags = [];
+    let selectedRows = new Set();
+    let headers = [];
+    let rows = [];
     let scrollOffset = 0;
     let isDragging = false;
     let scrollStartY = 0;
     let scrollStartOffset = 0;
 
-    async function updateTags() {
+    async function updateRows() {
         try {
-            const response = await fetch('/ez_tag_browser/get_directory_structure', {
+            const response = await fetch('/ez_csv_browser/get_directory_structure', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: currentFile, filter: filterText })
@@ -89,21 +91,22 @@ async function addTagBrowserUI(node) {
             }
 
             const data = await response.json();
-            if (!data.tags) {
+            if (!data.rows) {
                 console.error("Invalid response format:", data);
                 return;
             }
 
-            tags = data.tags;
+            headers = data.headers || [];
+            rows = data.rows || [];
             node.setDirtyCanvas(true);
         } catch (error) {
-            console.error("Error updating tags:", error);
+            console.error("Error updating rows:", error);
         }
     }
 
     async function fetchFileInfo(relativePath) {
         try {
-            const response = await fetch('/ez_tag_browser/get_file_info', {
+            const response = await fetch('/ez_csv_browser/get_file_info', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ relative_path: relativePath })
@@ -123,57 +126,64 @@ async function addTagBrowserUI(node) {
         }
     }
 
-    function updateSelectedTags(tag) {
-        // Use a unique symbol for empty string tags to allow selection/deselection
-        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
-        const tagKey = tag === '' ? EMPTY_TAG_SYMBOL : tag;
+    function updateSelectedRows(rowIdx) {
         if (selectionModeWidget.value === "multiple" || selectionModeWidget.value === "random") {
-            if (selectedTags.has(tagKey)) {
-                selectedTags.delete(tagKey);
+            if (selectedRows.has(rowIdx)) {
+                selectedRows.delete(rowIdx);
             } else {
-                selectedTags.add(tagKey);
+                selectedRows.add(rowIdx);
             }
         } else {
-            selectedTags.clear();
-            selectedTags.add(tagKey);
+            selectedRows.clear();
+            selectedRows.add(rowIdx);
         }
-        // Store the actual tag values in the widget (not the symbol)
-        const selectedTagsString = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t).join(", ");
-        selectedTagsWidget.value = selectedTagsString;
+        const selectedRowsString = Array.from(selectedRows).join(",");
+        selectedRowWidget.value = selectedRowsString;
         node.setDirtyCanvas(true);
     }
 
-    function drawPreviewText(ctx, text) {
+    function drawHeadersPreview(ctx) {
+        ctx.fillStyle = COLORS.headers;
+        ctx.font = "11px Arial";
+        const maxWidth = node.size[0] - PREVIEW_PADDING * 2 - 2;
+        
+        // First line: Show "N headers:" where N is the number of headers
+        const headerCount = headers.length;
+        ctx.fillText(`${headerCount} Headers:`, PREVIEW_PADDING, HEADERS_SKIP);
+        
+        // Second line: Headers separated by " | "
+        if (headers.length > 0) {
+            let headerString = headers.join(" | ");
+            
+            // If too long, truncate with ellipsis
+            if (ctx.measureText(headerString).width > maxWidth) {
+                let truncated = headerString;
+                while (ctx.measureText(truncated + ELLIPSIS).width > maxWidth && truncated.length > 0) {
+                    truncated = truncated.slice(0, -1);
+                }
+                headerString = truncated + ELLIPSIS;
+            }
+            
+            ctx.fillText(headerString, PREVIEW_PADDING, HEADERS_SKIP + HEADERS_LINE_HEIGHT);
+        }
+    }
+
+    function drawPreviewText(ctx) {
         ctx.fillStyle = COLORS.text;
         ctx.font = "12px Arial";
         const maxWidth = node.size[0] - PREVIEW_PADDING * 2;
-        let displayText = text;
-        const addAfter = addAfterWidget.value ? (" " + addAfterWidget.value) : "";
-        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
-        // Use the actual selected tags for preview
-        let selectedTagValues = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t);
+        let displayText = "";
         if (selectionModeWidget.value === "random") {
-            const tagCount = selectedTagValues.length > 0 ? selectedTagValues.length : tags.length;
-            displayText = `selecting from ${tagCount} tags`;
+            const rowCount = selectedRows.size > 0 ? selectedRows.size : rows.length;
+            displayText = `selecting from ${rowCount} rows`;
         } else if (selectionModeWidget.value === "multiple") {
-            if (selectedTagValues.length > 0) {
-                // Special case: only [empty] tag selected
-                if (selectedTagValues.length === 1 && selectedTagValues[0] === '' && addAfter.trim() !== '') {
-                    displayText = addAfter.trim();
-                } else {
-                    displayText = selectedTagValues.map(tag => tag === '' ? addAfter.trim() : tag + addAfter).join(", ");
-                }
-            } else {
-                displayText = "";
-            }
-        } else if (selectionModeWidget.value === "single") {
-            if (selectedTagValues.length > 0) {
-                displayText = selectedTagValues.map(tag => tag === '' ? addAfter.trim() : tag + addAfter).join(", ");
-            } else {
-                displayText = "";
+            displayText = `${selectedRows.size} rows selected`;
+        } else if (selectionModeWidget.value === "single" && selectedRows.size === 1 && headers.length > 0) {
+            const idx = Array.from(selectedRows)[0];
+            if (rows[idx]) {
+                displayText = rows[idx][0] || `Row ${idx+1}`;
             }
         }
-        // Truncate preview if too long
         if (ctx.measureText(displayText).width > maxWidth) {
             let truncatedText = displayText;
             while (ctx.measureText(truncatedText + ELLIPSIS).width > maxWidth && truncatedText.length > 0) {
@@ -185,48 +195,46 @@ async function addTagBrowserUI(node) {
     }
 
     const refreshButton = node.addWidget("button", "Refresh / Clear", null, () => {
-        selectedTags.clear();
-        selectedTagsWidget.value = "";
+        selectedRows.clear();
+        selectedRowWidget.value = "";
         (async () => {
-            currentFile = await fetchFileInfo(tagsFileWidget.value);
+            currentFile = await fetchFileInfo(csvFileWidget.value);
             if (currentFile) {
-                updateTags();
+                updateRows();
             }
         })();
     });
 
-    tagsFileWidget.callback = () => {
-        selectedTags.clear();
-        selectedTagsWidget.value = "";
+    csvFileWidget.callback = () => {
+        selectedRows.clear();
+        selectedRowWidget.value = "";
         (async () => {
-            currentFile = await fetchFileInfo(tagsFileWidget.value);
+            currentFile = await fetchFileInfo(csvFileWidget.value);
             if (currentFile) {
-                updateTags();
+                updateRows();
             }
         })();
     };
 
     filterTextWidget.callback = () => {
         filterText = filterTextWidget.value;
-        updateTags();
+        updateRows();
     };
 
     // Add Invert Selection button widget
     const invertButton = node.addWidget("button", "Invert Selection", null, () => {
         if (selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random") return;
-        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
-        const allTagKeys = tags.map(tag => tag === '' ? EMPTY_TAG_SYMBOL : tag);
+        const allRowIndices = Array.from({length: rows.length}, (_, i) => i);
         const newSelected = new Set();
-        for (const tagKey of allTagKeys) {
-            if (!selectedTags.has(tagKey)) newSelected.add(tagKey);
+        for (const idx of allRowIndices) {
+            if (!selectedRows.has(idx)) newSelected.add(idx);
         }
-        selectedTags = newSelected;
+        selectedRows = newSelected;
         // Update widget value
-        const selectedTagsString = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t).join(", ");
-        selectedTagsWidget.value = selectedTagsString;
+        const selectedRowsString = Array.from(selectedRows).join(",");
+        selectedRowWidget.value = selectedRowsString;
         node.setDirtyCanvas(true);
     });
-
     // Ensure correct enabled state on load
     setTimeout(() => {
         invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
@@ -235,45 +243,29 @@ async function addTagBrowserUI(node) {
     // Update button enabled/disabled state on mode change
     const origSelectionModeCallback = selectionModeWidget.callback;
     selectionModeWidget.callback = () => {
-        selectedTags.clear();
-        selectedTagsWidget.value = "";
+        selectedRows.clear();
+        selectedRowWidget.value = "";
         invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
         node.setDirtyCanvas(true);
         if (origSelectionModeCallback) origSelectionModeCallback();
     };
-
-    // Restore selection from widget value on load
-    setTimeout(() => {
-        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
-        selectedTags = new Set(
-            selectedTagsWidget.value.split(',').map(t => t.trim()).filter(t => t !== '').map(t => t === '' ? EMPTY_TAG_SYMBOL : t)
-        );
-        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
-        node.setDirtyCanvas(true);
-    }, 0);
 
     node.onDrawBackground = function(ctx) {
         if (!this.flags.collapsed) {
             const pos = TOP_PADDING - TOP_BAR_HEIGHT;
             ctx.fillStyle = COLORS.background;
             ctx.fillRect(0, pos, this.size[0], this.size[1] - pos - BOTTOM_SKIP);
-
-            // Draw top bar
             ctx.fillStyle = COLORS.topBar;
             ctx.fillRect(0, pos, this.size[0], TOP_BAR_HEIGHT);
-
-            // Draw selected tags preview
-            drawPreviewText(ctx, selectedTagsWidget.value);
-
+            drawHeadersPreview(ctx);
+            drawPreviewText(ctx);
             ctx.save();
             ctx.beginPath();
             ctx.rect(0, TOP_PADDING, this.size[0] - SCROLLBAR_WIDTH, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP);
             ctx.clip();
-            drawTags(ctx, 0, TOP_PADDING - scrollOffset, this.size[0] - SCROLLBAR_WIDTH - 10, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP);
+            drawRows(ctx, 0, TOP_PADDING - scrollOffset, this.size[0] - SCROLLBAR_WIDTH - 10, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP);
             ctx.restore();
-
-            // Draw scrollbar
-            drawScrollbar(ctx, this.size[0] - SCROLLBAR_WIDTH, TOP_PADDING, SCROLLBAR_WIDTH, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP, scrollOffset, getTotalTagsHeight());
+            drawScrollbar(ctx, this.size[0] - SCROLLBAR_WIDTH, TOP_PADDING, SCROLLBAR_WIDTH, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP, scrollOffset, getTotalRowsHeight());
         }
     };
 
@@ -295,73 +287,55 @@ async function addTagBrowserUI(node) {
 
     function drawScrollbar(ctx, x, y, width, height, offset, totalHeight) {
         drawRoundedRect(ctx, x, y, width, height, width / 2, COLORS.scrollbar);
-
         const visibleHeight = height;
         const scrollHeight = Math.max(height * (visibleHeight / totalHeight), 20);
         const maxOffset = Math.max(0, totalHeight - visibleHeight);
         const scrollY = y + (offset / maxOffset) * (height - scrollHeight);
-
         drawRoundedRect(ctx, x, scrollY, width, scrollHeight, width / 2, COLORS.scrollbarHover);
     }
 
-    function getTotalTagsHeight() {
+    function getTotalRowsHeight() {
         const columns = Math.max(2, Math.floor((node.size[0] - SCROLLBAR_WIDTH) / MIN_COLUMN_WIDTH));
-        const rows = Math.ceil(tags.length / columns);
-        return rows * (TAG_HEIGHT + TAG_PADDING);
+        const rowCount = rows.length;
+        const rowsPerCol = Math.ceil(rowCount / columns);
+        return rowsPerCol * (ROW_HEIGHT + ROW_PADDING);
     }
 
-    function drawTags(ctx, x, y, width, height) {
+    function drawRows(ctx, x, y, width, height) {
         ctx.fillStyle = COLORS.background;
         ctx.fillRect(x, y, width, height);
-
         const columns = Math.max(2, Math.floor((node.size[0] - SCROLLBAR_WIDTH) / MIN_COLUMN_WIDTH));
-        const columnWidth = (width - TAG_PADDING * (columns + 1)) / columns;
-        const rows = Math.ceil(tags.length / columns);
-
+        const columnWidth = (width - ROW_PADDING * (columns + 1)) / columns;
+        const rowCount = rows.length;
+        const rowsPerCol = Math.ceil(rowCount / columns);
         const visibleHeight = height;
-        const startRow = Math.floor(scrollOffset / (TAG_HEIGHT + TAG_PADDING));
-        const endRow = Math.min(rows, startRow + Math.ceil(visibleHeight / (TAG_HEIGHT + TAG_PADDING))+2);
-
-        const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
-
+        const startRow = Math.floor(scrollOffset / (ROW_HEIGHT + ROW_PADDING));
+        const endRow = Math.min(rowsPerCol, startRow + Math.ceil(visibleHeight / (ROW_HEIGHT + ROW_PADDING)) + 2);
         for (let row = startRow; row < endRow; row++) {
             for (let col = 0; col < columns; col++) {
-                const tagIndex = row * columns + col;
-                if (tagIndex >= tags.length) break;
-
-                const tag = tags[tagIndex];
-                const tagKey = tag === '' ? EMPTY_TAG_SYMBOL : tag;
-                const xPos = x + EXTRA_TAG_PADDING + TAG_PADDING + col * (columnWidth + TAG_PADDING);
-                const yPos = y + row * (TAG_HEIGHT + TAG_PADDING) + TAG_PADDING;
-
-                // Draw tag background
-                const bgColor = selectedTags.has(tagKey) ? COLORS.tagSelected : COLORS.tag;
-                drawRoundedRect(ctx, xPos, yPos, columnWidth, TAG_HEIGHT, BORDER_RADIUS, bgColor);
-
-                // Draw tag text with truncation
+                const rowIndex = row * columns + col;
+                if (rowIndex >= rows.length) break;
+                const rowData = rows[rowIndex];
+                const label = rowData[0] || `Row ${rowIndex+1}`;
+                const xPos = x + EXTRA_ROW_PADDING + ROW_PADDING + col * (columnWidth + ROW_PADDING);
+                const yPos = y + EXTRA_ROW_PADDING + row * (ROW_HEIGHT + ROW_PADDING) + ROW_PADDING;
+                // Draw row background
+                const bgColor = selectedRows.has(rowIndex) ? COLORS.rowSelected : COLORS.row;
+                drawRoundedRect(ctx, xPos, yPos, columnWidth, ROW_HEIGHT, BORDER_RADIUS, bgColor);
+                // Draw row label with truncation
                 ctx.fillStyle = COLORS.text;
                 ctx.font = "12px Arial";
-                
-                // Calculate available width for text
                 const maxTextWidth = columnWidth - TEXT_PADDING * 2;
-                
-                // Measure text width
-                let displayText = tag;
-                // If tag is empty, display nothing
-                if (tag === '') {
-                    displayText = '';
-                } else {
-                    const textMetrics = ctx.measureText(tag);
-                    if (textMetrics.width > maxTextWidth) {
-                        let truncatedText = tag;
-                        while (ctx.measureText(truncatedText + ELLIPSIS).width > maxTextWidth && truncatedText.length > 0) {
-                            truncatedText = truncatedText.slice(0, -1);
-                        }
-                        displayText = truncatedText + ELLIPSIS;
+                const textMetrics = ctx.measureText(label);
+                let displayText = label;
+                if (textMetrics.width > maxTextWidth) {
+                    let truncatedText = label;
+                    while (ctx.measureText(truncatedText + ELLIPSIS).width > maxTextWidth && truncatedText.length > 0) {
+                        truncatedText = truncatedText.slice(0, -1);
                     }
+                    displayText = truncatedText + ELLIPSIS;
                 }
-                // Draw the text (empty tag will appear empty)
-                ctx.fillText(displayText, xPos + TEXT_PADDING, yPos + TAG_HEIGHT / 2 + 4);
+                ctx.fillText(displayText, xPos + TEXT_PADDING, yPos + ROW_HEIGHT / 2 + 4);
             }
         }
     }
@@ -370,21 +344,19 @@ async function addTagBrowserUI(node) {
         const pos = TOP_PADDING - TOP_BAR_HEIGHT;
         const localY = event.canvasY - this.pos[1] - pos + CLICK_Y_OFFSET;
         const localX = event.canvasX - this.pos[0] + CLICK_X_OFFSET;
-
         if (localY < 0 || localY > this.size[1] || localX < 0 || localX > this.size[0]) {
             return false;
         }
-
         if (localY > TOP_BAR_HEIGHT && localY < this.size[1] - pos - 10) {
             if (localX >= 0 && localX < this.size[0] - SCROLLBAR_WIDTH) {
-                // Calculate which tag was clicked
+                // Calculate which row was clicked
                 const columns = Math.max(2, Math.floor((this.size[0] - SCROLLBAR_WIDTH) / MIN_COLUMN_WIDTH));
                 const column = Math.floor(localX / ((this.size[0] - SCROLLBAR_WIDTH) / columns));
-                const row = Math.floor((localY - TOP_BAR_HEIGHT + scrollOffset) / (TAG_HEIGHT + TAG_PADDING));
-                const tagIndex = row * columns + column;
-                
-                if (tagIndex >= 0 && tagIndex < tags.length) {
-                    updateSelectedTags(tags[tagIndex]);
+                const rowsPerCol = Math.ceil(rows.length / columns);
+                const row = Math.floor((localY - TOP_BAR_HEIGHT + scrollOffset) / (ROW_HEIGHT + ROW_PADDING));
+                const rowIndex = row * columns + column;
+                if (rowIndex >= 0 && rowIndex < rows.length) {
+                    updateSelectedRows(rowIndex);
                 }
                 return true;
             } else if (localX >= this.size[0] - SCROLLBAR_WIDTH) {
@@ -395,7 +367,6 @@ async function addTagBrowserUI(node) {
                 return true;
             }
         }
-
         return false;
     };
 
@@ -403,9 +374,8 @@ async function addTagBrowserUI(node) {
         const pos = TOP_PADDING - TOP_BAR_HEIGHT;
         const localY = event.canvasY - this.pos[1] - pos + CLICK_Y_OFFSET;
         const localX = event.canvasX - this.pos[0] + CLICK_X_OFFSET;
-
         if (isDragging) {
-            const totalHeight = getTotalTagsHeight();
+            const totalHeight = getTotalRowsHeight();
             const visibleHeight = this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP;
             const maxOffset = Math.max(0, totalHeight - visibleHeight);
             const scrollMove = (event.canvasY - scrollStartY) * (totalHeight / visibleHeight);
@@ -413,7 +383,6 @@ async function addTagBrowserUI(node) {
             this.setDirtyCanvas(true);
             return true;
         }
-
         return false;
     };
 
@@ -435,11 +404,20 @@ async function addTagBrowserUI(node) {
         this.setDirtyCanvas(true);
     };
 
+    // Restore selection from widget value on load
+    setTimeout(() => {
+        selectedRows = new Set(
+            selectedRowWidget.value.split(',').map(t => t.trim()).filter(t => t !== '').map(t => parseInt(t)).filter(Number.isFinite)
+        );
+        invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
+        node.setDirtyCanvas(true);
+    }, 0);
+
     // Initialize
     setTimeout(async () => {
-        currentFile = await fetchFileInfo(tagsFileWidget.value);
+        currentFile = await fetchFileInfo(csvFileWidget.value);
         if (currentFile) {
-            updateTags();
+            updateRows();
         }
         updateNodeSize();
     }, 0);
@@ -471,7 +449,7 @@ const canvasEl = app.canvas.canvas;
             event.stopPropagation();
 
             // 3. Manually handle the internal scrolling
-            const totalHeight = getTotalTagsHeight();
+            const totalHeight = getTotalRowsHeight();
             const visibleHeight = node.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP;
             const maxOffset = Math.max(0, totalHeight - visibleHeight);
 
@@ -490,5 +468,5 @@ const canvasEl = app.canvas.canvas;
     node.onRemoved = function() {
         canvasEl.removeEventListener('wheel', stopViewportZoom, { capture: true });
         if (onRemoved) onRemoved.apply(this, arguments);
-    };
+    };    
 }
