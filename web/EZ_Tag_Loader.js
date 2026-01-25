@@ -443,4 +443,52 @@ async function addTagBrowserUI(node) {
         }
         updateNodeSize();
     }, 0);
+    
+const canvasEl = app.canvas.canvas;
+
+    const stopViewportZoom = (event) => {
+        // 1. Convert screen coordinates to ComfyUI world coordinates
+        const rect = canvasEl.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const worldPos = app.canvas.convertCanvasToOffset([mouseX, mouseY]);
+        
+        const localX = worldPos[0] - node.pos[0];
+        const localY = worldPos[1] - node.pos[1];
+
+        // 2. Define the exact hit-box for the file browser
+        // Check if mouse is within the width of the node AND within the file list Y bounds
+        const isOverBrowser = (
+            localX >= 0 && 
+            localX <= node.size[0] &&
+            localY >= TOP_PADDING && 
+            localY <= node.size[1] - BOTTOM_SKIP
+        );
+
+        if (isOverBrowser && !node.flags.collapsed) {
+            // STOP THE VIEWPORT ZOOM
+            event.preventDefault(); 
+            event.stopPropagation();
+
+            // 3. Manually handle the internal scrolling
+            const totalHeight = getTotalTagsHeight();
+            const visibleHeight = node.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP;
+            const maxOffset = Math.max(0, totalHeight - visibleHeight);
+
+            // Tweak sensitivity here
+            scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + event.deltaY));
+
+            node.setDirtyCanvas(true);
+        }
+    };
+
+    // Use { capture: true } to intercept the event before ComfyUI's zoom listener
+    canvasEl.addEventListener('wheel', stopViewportZoom, { passive: false, capture: true });
+
+    // Cleanup when node is removed
+    const onRemoved = node.onRemoved;
+    node.onRemoved = function() {
+        canvasEl.removeEventListener('wheel', stopViewportZoom, { capture: true });
+        if (onRemoved) onRemoved.apply(this, arguments);
+    };
 }
