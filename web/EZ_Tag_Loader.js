@@ -195,7 +195,7 @@ async function addTagBrowserUI(node) {
                 updateTags();
             }
         })();
-    });
+    }, { serialize: false });
 
     tagsFileWidget.callback = () => {
         selectedTags.clear();
@@ -213,28 +213,24 @@ async function addTagBrowserUI(node) {
         updateTags();
     };
 
-    // Add Invert Selection button widget
     const invertButton = node.addWidget("button", "Invert Selection", null, () => {
         if (selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random") return;
         const EMPTY_TAG_SYMBOL = '__EZ_EMPTY_TAG__';
-        const allTagKeys = tags.map(tag => tag === '' ? EMPTY_TAG_SYMBOL : tag);
+        const allTagKeys = tags.map(t => t === '' ? EMPTY_TAG_SYMBOL : t);
         const newSelected = new Set();
-        for (const tagKey of allTagKeys) {
-            if (!selectedTags.has(tagKey)) newSelected.add(tagKey);
+        for (const key of allTagKeys) {
+            if (!selectedTags.has(key)) newSelected.add(key);
         }
         selectedTags = newSelected;
-        // Update widget value
         const selectedTagsString = Array.from(selectedTags).map(t => t === EMPTY_TAG_SYMBOL ? '' : t).join(", ");
         selectedTagsWidget.value = selectedTagsString;
         node.setDirtyCanvas(true);
-    });
+    }, { serialize: false });
 
-    // Ensure correct enabled state on load
     setTimeout(() => {
         invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
     }, 0);
 
-    // Update button enabled/disabled state on mode change
     const origSelectionModeCallback = selectionModeWidget.callback;
     selectionModeWidget.callback = () => {
         selectedTags.clear();
@@ -445,70 +441,5 @@ async function addTagBrowserUI(node) {
         }
         updateNodeSize();
     }, 0);
-    
-const canvasEl = app.canvas.canvas;
 
-    const stopViewportZoom = (event) => {
-        // 1. Convert screen coordinates to ComfyUI world coordinates
-        const rect = canvasEl.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-        const worldPos = app.canvas.convertCanvasToOffset([mouseX, mouseY]);
-        
-        const localX = worldPos[0] - node.pos[0];
-        const localY = worldPos[1] - node.pos[1];
-
-        // 2. Define the exact hit-box for the file browser
-        // Check if mouse is within the width of the node AND within the file list Y bounds
-        const isOverBrowser = (
-            localX >= 0 && 
-            localX <= node.size[0] &&
-            localY >= TOP_PADDING && 
-            localY <= node.size[1] - BOTTOM_SKIP
-        );
-
-        if (isOverBrowser && !node.flags.collapsed) {
-                event.preventDefault(); 
-                event.stopPropagation();
-
-                const totalHeight = getTotalTagsHeight();
-                const visibleHeight = node.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP;
-                const maxOffset = Math.max(0, totalHeight - visibleHeight);
-
-                // Update target instead of current offset
-                // Adjust the 0.5 multiplier to change scroll speed
-                targetScrollOffset = Math.max(0, Math.min(maxOffset, targetScrollOffset + event.deltaY * 0.5));
-
-                // Start the animation loop if it's not running
-                if (!isAnimating) {
-                    isAnimating = true;
-                    requestAnimationFrame(smoothScrollLoop);
-                }
-            }
-        };
-function smoothScrollLoop() {
-    // The closer the factor (0.1) is to 1, the "snappier" it feels. 
-    // Closer to 0.01 feels "heavy" or "floaty".
-    const easingFactor = 0.15;
-    const diff = targetScrollOffset - scrollOffset;
-
-    if (Math.abs(diff) > 0.1) {
-        scrollOffset += diff * easingFactor;
-        node.setDirtyCanvas(true);
-        requestAnimationFrame(smoothScrollLoop);
-    } else {
-        scrollOffset = targetScrollOffset;
-        isAnimating = false;
-        node.setDirtyCanvas(true);
-    }
-}
-    // Use { capture: true } to intercept the event before ComfyUI's zoom listener
-    canvasEl.addEventListener('wheel', stopViewportZoom, { passive: false, capture: true });
-
-    // Cleanup when node is removed
-    const onRemoved = node.onRemoved;
-    node.onRemoved = function() {
-        canvasEl.removeEventListener('wheel', stopViewportZoom, { capture: true });
-        if (onRemoved) onRemoved.apply(this, arguments);
-    };
-}
+    const canvasEl = app.canvas.canvas;
