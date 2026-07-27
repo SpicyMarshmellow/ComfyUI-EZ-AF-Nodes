@@ -35,7 +35,7 @@ class EZ_Tag_Loader:
             "optional": {
                 "opt_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "forceInput": True, "tooltip": "Control SEED, used only in 'random' selection mode.\nIf not connected, always re-executes node on prompt"}),
                 "filter_text": ("STRING", {"default": "", "tooltip": "Filter items based on a text string"}),
-                "prefix": ("STRING", {"default": "", "tooltip": "Add text string after each tag (comma-separated)"}),
+                "prefix": ("STRING", {"default": "", "tooltip": "Add text string before each tag (comma-separated)"}),
                 "suffix": ("STRING", {"default": "", "tooltip": "Add text string after each tag (comma-separated)"}),
                 "selected_tags": ("STRING", {"default": ""}),
             }
@@ -44,7 +44,7 @@ class EZ_Tag_Loader:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("STRING", "OPT_FILEPATH", "BATCH_SELECTED")
     OUTPUT_IS_LIST = (False, False, True)
-    OUTPUT_TOOLTIPS = ("Selected tag(s).\nDelimited by comma if multiple","Path to currently selected text file containing tags.","List of all selected items.\nWill output all visible (filtered) items if none or single item is selected.")
+    OUTPUT_TOOLTIPS = ("Selected tag(s).\nDelimited by comma if multiple","Path to currently selected text file containing tags.","List of selected items only.\nEmpty if none selected in multiple mode.")
 
     FUNCTION = "browse_tags"
 
@@ -106,46 +106,50 @@ class EZ_Tag_Loader:
             else:
                 selected_list = [selected_tags]
 
-        # Add 'suffix' to each selected tag if provided
-        #if suffix:
-        #    selected_list = [suffix if tag == '' else f"{tag} , {suffix}" for tag in selected_list]
-        #if prefix:
-        #    selected_list = [prefix if tag == '' else f"{prefix}, {tag}" for tag in selected_list]
         # Main output
+        # FIX: main_output stays a plain string throughout. The previous
+        # version wrapped it in a list when prefix was set, and indexed
+        # main_output[0] in the suffix step assuming that wrapping had
+        # already happened. When suffix was set without prefix,
+        # main_output was still a plain string at that point, so
+        # main_output[0] silently grabbed a single character instead
+        # of the full text, discarding the rest of the selected tags.
         main_output = ", ".join(selected_list)
-        # Add Prefix       
         if prefix:
-            main_output = [prefix if main_output == '' else f"{prefix}, {main_output}"]
-        # Add Suffix           
-        if suffix:    
-            main_output = [suffix if main_output == '' else f"{main_output[0]}, {suffix}"]        
+            main_output = prefix if main_output == '' else f"{prefix}, {main_output}"
+        if suffix:
+            main_output = suffix if main_output == '' else f"{main_output}, {suffix}"
+
+        # List output: only the selected items, never falls back to
+        # showing every tag in the file.
+        all_output = list(selected_list)
 
         # Add Prefix
-        if len(selected_list) == 0 and prefix:
+        if len(all_output) == 0 and prefix:
             all_output = [prefix]
-        elif len(selected_list) > 0 and prefix:
-            all_output = [prefix if tag == '' else f"{prefix}, {tag}" for tag in selected_list]
-        else:
-            all_output = selected_list
+        elif len(all_output) > 0 and prefix:
+            all_output = [prefix if tag == '' else f"{prefix}, {tag}" for tag in all_output]
         # Add Suffix
-        if len(all_output) == 0 and suffix:                   
+        if len(all_output) == 0 and suffix:
             all_output = [suffix]
-        elif len(all_output) > 0 and suffix:                   
+        elif len(all_output) > 0 and suffix:
             all_output = [suffix if tag == '' else f"{tag}, {suffix}" for tag in all_output]
+
         return (main_output, tags_file, all_output)
 
     @classmethod
-    def IS_CHANGED(cls, tags_file, selection_mode, selected_tags="", filter_text="", suffix="", opt_seed=0):
+    def IS_CHANGED(cls, tags_file, selection_mode, selected_tags="", filter_text="", prefix="", suffix="", opt_seed=0):
         if selection_mode == "random":
             # For random mode, include seed in the hash only if opt_seed is provided and not 0
             if opt_seed is not None and opt_seed != 0:
-                return str(opt_seed) + str(tags_file) + str(selection_mode) + str(filter_text)
+                return str(opt_seed) + str(tags_file) + str(selection_mode) + str(filter_text) + str(prefix) + str(suffix)
             else:
                 return float('nan')  # Fall back to normal random behavior
-        return selected_tags + str(tags_file) + str(selection_mode) + str(suffix)
+        # FIX: prefix was missing entirely, only suffix was hashed before.
+        return selected_tags + str(tags_file) + str(selection_mode) + str(prefix) + str(suffix)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, tags_file, selection_mode="single", selected_tags="", filter_text="", suffix="", opt_seed=0):
+    def VALIDATE_INPUTS(cls, tags_file, selection_mode="single", selected_tags="", filter_text="", prefix="", suffix="", opt_seed=0):
         global tags_path
         tags_file = os.path.join(tags_path, tags_file)
         tags_file = os.path.abspath(tags_file)
