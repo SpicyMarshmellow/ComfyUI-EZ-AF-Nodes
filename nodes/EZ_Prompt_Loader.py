@@ -44,7 +44,7 @@ class EZ_Prompt_Loader:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("STRING", "OPT_DIRECTORY", "BATCH_SELECTED")
     OUTPUT_IS_LIST = (False, False, True)
-    OUTPUT_TOOLTIPS = ("Content of selected prompt file(s).\nDelimited by comma if multiple","Path to currently selected directory.","List of all selected items.\nWill output all visible (filtered) items if none or single item is selected.")
+    OUTPUT_TOOLTIPS = ("Content of selected prompt file(s).\nDelimited by comma if multiple","Path to currently selected directory.","List of all selected items.\nWill output all visible (filtered) items if none selected, otherwise only the selected item(s).")
 
     FUNCTION = "browse_files"
 
@@ -104,15 +104,17 @@ class EZ_Prompt_Loader:
             if os.path.isfile(txt_path):
                 with open(txt_path, "r", encoding="utf-8") as f:
                     prompt_text = f.read().strip()
+
+        # Add prefix/suffix to the main string output.
+        # FIX: kept as a plain string throughout, no list wrapping,
+        # so RETURN_TYPES[0] == "STRING" stays true regardless of
+        # whether prefix/suffix are set.
         if prefix:
-            prompt_text = [prefix if prompt_text == '' else f"{prefix}, {prompt_text}"]
-        # Add Suffix           
-        if prefix and suffix:    
-            prompt_text = [suffix if prompt_text == '' else f"{prompt_text[0]}, {suffix}"]
-        elif not prefix and suffix:   
-            prompt_text = [suffix if prompt_text == '' else f"{prompt_text}, {suffix}"]            
-            
-        # List output: if 0 or 1 selected, output all prompts; else output selected_list
+            prompt_text = prefix if prompt_text == '' else f"{prefix}, {prompt_text}"
+        if suffix:
+            prompt_text = suffix if prompt_text == '' else f"{prompt_text}, {suffix}"
+
+        # List output: if none selected, output all prompts; else output selected_list
         if len(selected_list) < 1:
             all_output = []
             for file in files:
@@ -132,23 +134,26 @@ class EZ_Prompt_Loader:
         if prefix:
             all_output = [prefix if tag == '' else f"{prefix}, {tag}" for tag in all_output]
         # Add Suffix
-        if suffix:                   
+        if suffix:
             all_output = [suffix if tag == '' else f"{tag}, {suffix}" for tag in all_output]
 
         return (prompt_text, prompt_directory, all_output)
 
     @classmethod
-    def IS_CHANGED(cls, prompt_directory, selection_mode, selected_files="", filter_text="", opt_seed=0):
+    def IS_CHANGED(cls, prompt_directory, selection_mode, selected_files="", filter_text="", prefix="", suffix="", opt_seed=0):
         if selection_mode == "random":
             # For random mode, include seed in the hash only if opt_seed is provided and not 0
             if opt_seed is not None and opt_seed != 0:
-                return str(opt_seed) + str(prompt_directory) + str(selection_mode) + str(filter_text)
+                return str(opt_seed) + str(prompt_directory) + str(selection_mode) + str(filter_text) + str(prefix) + str(suffix)
             else:
                 return float('nan')  # Fall back to normal random behavior
-        return selected_files + str(prompt_directory) + str(selection_mode)
+        # FIX: prefix/suffix now included, so changing only these fields
+        # forces ComfyUI to re-run the node instead of serving a stale
+        # cached result from before they were edited.
+        return selected_files + str(prompt_directory) + str(selection_mode) + str(prefix) + str(suffix)
 
     @classmethod
-    def VALIDATE_INPUTS(cls, prompt_directory, selection_mode="single", selected_files="", filter_text="", opt_seed=0):
+    def VALIDATE_INPUTS(cls, prompt_directory, selection_mode="single", selected_files="", filter_text="", prefix="", suffix="", opt_seed=0):
         global prompts_path
         prompt_directory = os.path.join(prompts_path, prompt_directory)
         prompt_directory = os.path.abspath(prompt_directory)
@@ -237,11 +242,6 @@ async def api_get_thumbnail(request):
     
 @PromptServer.instance.routes.post("/ez_file_browser/get_file_info")
 async def get_file_info(request):
-    # global prompts_path
-    # prompt_directory = os.path.join(prompts_path, prompt_directory)
-    # return web.json_response({
-    #     "full_path": prompt_directory,
-    # })
     data = await request.json()
     rel_path = data.get("relative_path", "")
     
