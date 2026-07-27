@@ -37,9 +37,10 @@ async function addFileBrowserUI(node) {
     const BOTTOM_PADDING = 5;
     const BOTTOM_SKIP = 10;
     const TOP_BAR_HEIGHT = 0;
-    const ITEM_SIZE = 80;
+    const ITEM_SIZE = 180;
+    const MIN_ITEM_SIZE = 180; // Your desired base size
     const ITEM_PADDING = 10;
-    const SCROLLBAR_WIDTH = 13;
+    const SCROLLBAR_WIDTH = 8;
     const TEXT_PADDING = 10;
     const PREVIEW_PADDING = 20; // Padding for preview text
     const PREVIEW_SKIP = 152; // Skip for preview text
@@ -67,9 +68,22 @@ async function addFileBrowserUI(node) {
     let files = [];
     let thumbnails = {};
     let scrollOffset = 0;
+    let targetScrollOffset = 0;
+    let isAnimating = false;
     let isDragging = false;
     let scrollStartY = 0;
     let scrollStartOffset = 0;
+
+    
+    // Helper to calculate the stretched size
+    function getAdaptiveSize() {
+        const availableWidth = node.size[0] - SCROLLBAR_WIDTH - ITEM_PADDING;
+        // Calculate how many columns fit at the minimum size
+        const cols = Math.max(1, Math.floor(availableWidth / (MIN_ITEM_SIZE + ITEM_PADDING)));
+        // Distribute remaining space so they fit perfectly
+        const stretchedSize = (availableWidth / cols) - ITEM_PADDING;
+        return { size: stretchedSize, cols: cols };
+    }
 
     async function updateFiles() {
         try {
@@ -78,7 +92,7 @@ async function addFileBrowserUI(node) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: currentDirectory, filter: filterText })
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("Server error:", errorData.error);
@@ -104,14 +118,12 @@ async function addFileBrowserUI(node) {
         for (const file of files) {
             try {
                 const imageFile = file.replace('.txt', '.png');
-                // Extract directory and filename for thumbnail request
                 const pathParts = file.split(/[/\\]/);
                 const fileName = pathParts[pathParts.length - 1];
                 const dirPath = pathParts.length > 1 ? pathParts.slice(0, -1).join('/') : '';
                 const fileDir = dirPath ? `${currentDirectory}/${dirPath}` : currentDirectory;
-                // Replace PROMPTS with THUMBNAILS in the path for thumbnail loading
                 const thumbnailDir = fileDir.replace(/prompts/g, 'thumbnails');
-                
+
                 const response = await fetch('/ez_file_browser/get_thumbnail', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -160,7 +172,7 @@ async function addFileBrowserUI(node) {
             selectedFiles.clear();
             selectedFiles.add(file);
         }
-        
+
         const selectedFilesString = Array.from(selectedFiles).join(", ");
         selectedFilesWidget.value = selectedFilesString;
         node.setDirtyCanvas(true);
@@ -169,10 +181,9 @@ async function addFileBrowserUI(node) {
     function drawPreviewText(ctx, text) {
         ctx.fillStyle = COLORS.text;
         ctx.font = "12px Arial";
-        
-        // Calculate available width for text
+
         const maxWidth = node.size[0] - TEXT_PADDING * 2;
-        
+
         let displayText = text;
         if (selectionModeWidget.value === "multiple") {
             const count = selectedFiles.size;
@@ -181,7 +192,6 @@ async function addFileBrowserUI(node) {
             const count = selectedFiles.size > 0 ? selectedFiles.size : files.length;
             displayText = `selecting from ${count} prompt${count !== 1 ? 's' : ''}`;
         } else {
-            // Single mode - show first selected file name (filename only, no path)
             if (selectedFiles.size > 0) {
                 const selectedFile = Array.from(selectedFiles)[0];
                 const pathParts = selectedFile.split(/[/\\]/);
@@ -191,11 +201,9 @@ async function addFileBrowserUI(node) {
                 displayText = "";
             }
         }
-        
-        // Measure text width
+
         const textMetrics = ctx.measureText(displayText);
-        
-        // If text is too long, truncate it
+
         if (textMetrics.width > maxWidth) {
             let truncatedText = displayText;
             while (ctx.measureText(truncatedText + ELLIPSIS).width > maxWidth && truncatedText.length > 0) {
@@ -203,8 +211,7 @@ async function addFileBrowserUI(node) {
             }
             displayText = truncatedText + ELLIPSIS;
         }
-        
-        // Draw the text
+
         ctx.fillText(displayText, PREVIEW_PADDING, PREVIEW_SKIP);
     }
 
@@ -217,7 +224,7 @@ async function addFileBrowserUI(node) {
                 updateFiles();
             }
         })();
-    });
+    }, { serialize: false });
 
     rootDirectoryWidget.callback = () => {
         selectedFiles.clear();
@@ -230,37 +237,27 @@ async function addFileBrowserUI(node) {
         })();
     };
 
-    selectionModeWidget.callback = () => {
-        selectedFiles.clear();
-        selectedFilesWidget.value = "";
-        node.setDirtyCanvas(true);
-    };
-
     filterTextWidget.callback = () => {
         filterText = filterTextWidget.value;
         updateFiles();
     };
 
-    // Add Invert Selection button widget
     const invertButton = node.addWidget("button", "Invert Selection", null, () => {
         if (selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random") return;
-        const allFileNames = files;
         const newSelected = new Set();
-        for (const file of allFileNames) {
+        for (const file of files) {
             if (!selectedFiles.has(file)) newSelected.add(file);
         }
         selectedFiles = newSelected;
-        // Update widget value
         const selectedFilesString = Array.from(selectedFiles).join(", ");
         selectedFilesWidget.value = selectedFilesString;
         node.setDirtyCanvas(true);
-    });
-    // Ensure correct enabled state on load
+    }, { serialize: false });
+
     setTimeout(() => {
         invertButton.disabled = selectionModeWidget.value !== "multiple" && selectionModeWidget.value !== "random";
     }, 0);
 
-    // Update button enabled/disabled state on mode change
     const origSelectionModeCallback = selectionModeWidget.callback;
     selectionModeWidget.callback = () => {
         selectedFiles.clear();
@@ -276,11 +273,9 @@ async function addFileBrowserUI(node) {
             ctx.fillStyle = COLORS.background;
             ctx.fillRect(0, pos, this.size[0], this.size[1] - pos - BOTTOM_SKIP);
 
-            // Draw top bar
             ctx.fillStyle = COLORS.topBar;
             ctx.fillRect(0, pos, this.size[0], TOP_BAR_HEIGHT);
 
-            // Draw selected file preview
             drawPreviewText(ctx, selectedFiles.size > 0 ? Array.from(selectedFiles)[0].split(".")[0] : "");
 
             ctx.save();
@@ -290,7 +285,6 @@ async function addFileBrowserUI(node) {
             drawFiles(ctx, 0, TOP_PADDING - scrollOffset, this.size[0] - SCROLLBAR_WIDTH - 10, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP);
             ctx.restore();
 
-            // Draw scrollbar
             drawScrollbar(ctx, this.size[0] - SCROLLBAR_WIDTH, TOP_PADDING, SCROLLBAR_WIDTH, this.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP, scrollOffset, getTotalFilesHeight());
         }
     };
@@ -322,97 +316,66 @@ async function addFileBrowserUI(node) {
         drawRoundedRect(ctx, x, scrollY, width, scrollHeight, width / 2, COLORS.scrollbarHover);
     }
 
+    // FIX: now uses the same adaptive sizing as drawFiles/onMouseDown,
+    // instead of the old fixed ITEM_SIZE, so scrollbar height and scroll
+    // bounds can never drift out of sync with the actual rendered grid.
     function getTotalFilesHeight() {
-        const itemsPerRow = Math.floor((node.size[0] - SCROLLBAR_WIDTH) / (ITEM_SIZE + ITEM_PADDING));
-        return Math.ceil(files.length / itemsPerRow) * (ITEM_SIZE + ITEM_PADDING);
+        const { size, cols } = getAdaptiveSize();
+        return Math.ceil(files.length / cols) * (size + ITEM_PADDING);
     }
 
     function drawFiles(ctx, x, y, width, height) {
-        ctx.fillStyle = COLORS.background;
-        ctx.fillRect(x, y, width, height);
-
-        const itemsPerRow = Math.floor(width / (ITEM_SIZE + ITEM_PADDING));
-        const visibleHeight = height;
-        const startRow = Math.floor(scrollOffset / (ITEM_SIZE + ITEM_PADDING));
-        const endRow = Math.min(Math.ceil(files.length / itemsPerRow), startRow + Math.ceil(visibleHeight / (ITEM_SIZE + ITEM_PADDING)) + 2);
+        const { size, cols } = getAdaptiveSize();
+        const startRow = Math.floor(scrollOffset / (size + ITEM_PADDING));
+        const endRow = Math.min(Math.ceil(files.length / cols), startRow + Math.ceil(height / (size + ITEM_PADDING)) + 2);
 
         for (let row = startRow; row < endRow; row++) {
-            for (let col = 0; col < itemsPerRow; col++) {
-                const fileIndex = row * itemsPerRow + col;
+            for (let col = 0; col < cols; col++) {
+                const fileIndex = row * cols + col;
                 if (fileIndex >= files.length) break;
 
                 const file = files[fileIndex];
-                const xPos = x + ITEM_PADDING + col * (ITEM_SIZE + ITEM_PADDING);
-                const yPos = y + ITEM_PADDING + row * (ITEM_SIZE + ITEM_PADDING);
+                const xPos = x + ITEM_PADDING + col * (size + ITEM_PADDING);
+                const yPos = y + ITEM_PADDING + row * (size + ITEM_PADDING);
 
-                // Draw file background
                 const bgColor = selectedFiles.has(file) ? COLORS.itemSelected : COLORS.item;
-                drawRoundedRect(ctx, xPos, yPos, ITEM_SIZE, ITEM_SIZE, BORDER_RADIUS, bgColor);
+                drawRoundedRect(ctx, xPos, yPos, size, size, BORDER_RADIUS, bgColor);
 
-                // Draw thumbnail if available
                 if (thumbnails[file]) {
-                    // Draw thumbnail with rounded corners
                     ctx.save();
                     ctx.beginPath();
-                    ctx.roundRect(xPos, yPos, ITEM_SIZE, ITEM_SIZE, BORDER_RADIUS);
+                    ctx.roundRect(xPos, yPos, size, size, BORDER_RADIUS);
                     ctx.clip();
-                    ctx.drawImage(thumbnails[file], xPos, yPos, ITEM_SIZE, ITEM_SIZE);
+                    ctx.drawImage(thumbnails[file], xPos, yPos, size, size);
                     ctx.restore();
                 }
 
-                // Draw gradient overlay at the bottom
-                const gradientHeight = ITEM_SIZE/2;
-                const gradient = ctx.createLinearGradient(
-                    xPos, 
-                    yPos + ITEM_SIZE - gradientHeight, 
-                    xPos, 
-                    yPos + ITEM_SIZE
-                );
+                const gradientHeight = size / 2;
+                const gradient = ctx.createLinearGradient(xPos, yPos + size - gradientHeight, xPos, yPos + size);
                 gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
                 gradient.addColorStop(1, 'rgb(0, 0, 0)');
                 ctx.fillStyle = gradient;
-                ctx.fillRect(xPos, yPos + ITEM_SIZE - gradientHeight, ITEM_SIZE, gradientHeight);
+                ctx.fillRect(xPos, yPos + size - gradientHeight, size, gradientHeight);
 
-                // Draw filename
                 ctx.fillStyle = COLORS.text;
                 ctx.font = "12px Arial";
-                
-                // Get just the filename (everything after the last slash or backslash)
                 const pathParts = file.split(/[/\\]/);
                 const fileName = pathParts[pathParts.length - 1].split(".")[0];
-                // Calculate available width for text
-                const maxTextWidth = ITEM_SIZE - TEXT_PADDING * 2;
-                
-                let displayText = fileName;
-                
-                // Measure text width
-                const textMetrics = ctx.measureText(displayText);
-                
-                // If text is too long, truncate it
-                if (textMetrics.width > maxTextWidth) {
-                    let truncatedText = fileName;
-                    while (ctx.measureText(truncatedText + ELLIPSIS).width > maxTextWidth && truncatedText.length > 0) {
-                        truncatedText = truncatedText.slice(0, -1);
-                    }
-                    displayText = truncatedText + ELLIPSIS;
-                }
-                
-                // Draw the filename
-                ctx.fillText(displayText, xPos + TEXT_PADDING, yPos + ITEM_SIZE - TEXT_PADDING);
+                const maxTextWidth = size - TEXT_PADDING * 2;
 
-                // Draw selection border
+                let displayText = fileName;
+                if (ctx.measureText(displayText).width > maxTextWidth) {
+                    while (ctx.measureText(displayText + ELLIPSIS).width > maxTextWidth && displayText.length > 0) {
+                        displayText = displayText.slice(0, -1);
+                    }
+                    displayText += ELLIPSIS;
+                }
+                ctx.fillText(displayText, xPos + TEXT_PADDING, yPos + size - TEXT_PADDING);
+
                 if (selectedFiles.has(file)) {
                     ctx.strokeStyle = COLORS.itemSelected;
                     ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.roundRect(
-                        xPos - SELECTION_BORDER_PADDING, 
-                        yPos - SELECTION_BORDER_PADDING, 
-                        ITEM_SIZE + SELECTION_BORDER_PADDING * 2, 
-                        ITEM_SIZE + SELECTION_BORDER_PADDING * 2, 
-                        SELECTION_BORDER_RADIUS
-                    );
-                    ctx.stroke();
+                    ctx.strokeRect(xPos - 1, yPos - 1, size + 2, size + 2);
                 }
             }
         }
@@ -429,18 +392,16 @@ async function addFileBrowserUI(node) {
 
         if (localY > TOP_BAR_HEIGHT && localY < this.size[1] - pos - 10) {
             if (localX >= 0 && localX < this.size[0] - SCROLLBAR_WIDTH) {
-                // Calculate which file was clicked
-                const itemsPerRow = Math.floor((this.size[0] - SCROLLBAR_WIDTH) / (ITEM_SIZE + ITEM_PADDING));
-                const row = Math.floor((localY - TOP_BAR_HEIGHT + scrollOffset) / (ITEM_SIZE + ITEM_PADDING));
-                const col = Math.floor(localX / (ITEM_SIZE + ITEM_PADDING));
-                const fileIndex = row * itemsPerRow + col;
-                
+                const { size, cols } = getAdaptiveSize();
+                const row = Math.floor((localY - TOP_BAR_HEIGHT + scrollOffset) / (size + ITEM_PADDING));
+                const col = Math.floor(localX / (size + ITEM_PADDING));
+                const fileIndex = row * cols + col;
+
                 if (fileIndex >= 0 && fileIndex < files.length) {
                     updateSelectedFiles(files[fileIndex]);
                 }
                 return true;
             } else if (localX >= this.size[0] - SCROLLBAR_WIDTH) {
-                // Click on scrollbar
                 isDragging = true;
                 scrollStartY = event.canvasY;
                 scrollStartOffset = scrollOffset;
@@ -487,7 +448,6 @@ async function addFileBrowserUI(node) {
         this.setDirtyCanvas(true);
     };
 
-    // Restore selection from widget value on load
     setTimeout(() => {
         selectedFiles = new Set(
             selectedFilesWidget.value.split(',').map(t => t.trim()).filter(t => t !== '')
@@ -496,7 +456,6 @@ async function addFileBrowserUI(node) {
         node.setDirtyCanvas(true);
     }, 0);
 
-    // Initialize
     setTimeout(async () => {
         currentDirectory = await fetchFileInfo(rootDirectoryWidget.value);
         if (currentDirectory) {
@@ -504,4 +463,62 @@ async function addFileBrowserUI(node) {
         }
         updateNodeSize();
     }, 0);
+
+    const canvasEl = app.canvas.canvas;
+
+    const stopViewportZoom = (event) => {
+        const rect = canvasEl.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const worldPos = app.canvas.convertCanvasToOffset([mouseX, mouseY]);
+
+        const localX = worldPos[0] - node.pos[0];
+        const localY = worldPos[1] - node.pos[1];
+
+        const isOverBrowser = (
+            localX >= 0 &&
+            localX <= node.size[0] &&
+            localY >= TOP_PADDING &&
+            localY <= node.size[1] - BOTTOM_SKIP
+        );
+
+        if (isOverBrowser && !node.flags.collapsed) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const totalHeight = getTotalFilesHeight();
+            const visibleHeight = node.size[1] - TOP_PADDING - BOTTOM_PADDING - BOTTOM_SKIP;
+            const maxOffset = Math.max(0, totalHeight - visibleHeight);
+
+            targetScrollOffset = Math.max(0, Math.min(maxOffset, targetScrollOffset + event.deltaY * 0.5));
+
+            if (!isAnimating) {
+                isAnimating = true;
+                requestAnimationFrame(smoothScrollLoop);
+            }
+        }
+    };
+
+    function smoothScrollLoop() {
+        const easingFactor = 0.15;
+        const diff = targetScrollOffset - scrollOffset;
+
+        if (Math.abs(diff) > 0.1) {
+            scrollOffset += diff * easingFactor;
+            node.setDirtyCanvas(true);
+            requestAnimationFrame(smoothScrollLoop);
+        } else {
+            scrollOffset = targetScrollOffset;
+            isAnimating = false;
+            node.setDirtyCanvas(true);
+        }
+    }
+
+    canvasEl.addEventListener('wheel', stopViewportZoom, { passive: false, capture: true });
+
+    const onRemoved = node.onRemoved;
+    node.onRemoved = function() {
+        canvasEl.removeEventListener('wheel', stopViewportZoom, { capture: true });
+        if (onRemoved) onRemoved.apply(this, arguments);
+    };
 }
