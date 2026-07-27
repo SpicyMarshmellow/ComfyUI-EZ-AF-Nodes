@@ -33,30 +33,46 @@ class EZ_Extract_Prompt:
             return ("\n".join(result),)
 
         searchword = searchword.lower()
-        collect = False
-        lines_out = []
 
-        for line in string.splitlines():
-            if not collect:
-                # Detect header line
-                header = line.strip()
-                if header.lower().rstrip(':') == searchword:
-                    collect = True
-                continue
+        # Split input by separator to handle multiple entries
+        entries = string.split('---')
+        all_matches = []
 
-            # Stop on first empty line
-            if line.strip() == "":
-                break
-            lines_out.append(line)
+        for entry in entries:
+            collect = False
+            lines_out = []
 
-        result = "\n".join(lines_out)
-        
+            for line in entry.splitlines():
+                if not collect:
+                    # Detect header line
+                    header = line.strip()
+                    if header.lower().rstrip(':') == searchword:
+                        collect = True
+                    continue
+
+                # Stop collecting when we hit another header; blank lines
+                # inside a value don't stop collection
+                stripped_line = line.strip()
+                if stripped_line == "":
+                    continue  # Skip empty lines but don't stop collecting
+
+                # Check if this is a new header (ends with : and is a single word)
+                if stripped_line.endswith(":") and len(stripped_line.split()) == 1:
+                    break  # Stop collecting when we hit a new header
+
+                lines_out.append(line)
+
+            if lines_out:
+                all_matches.extend(lines_out)
+
+        result = "\n".join(all_matches)
+
         # If no content was extracted and pass_original is True, return the original string
         if not result.strip() and pass_original:
             return (string,)
-        
+
         return (result,)
-        
+
 class EZ_Find_Replace:
     @classmethod
     def INPUT_TYPES(cls):
@@ -100,23 +116,23 @@ class EZ_Text_to_Size:
             if text_input is None or text_input == "":
                 print("EZ_Text_to_Size: No input provided.")
                 return (None)
-            
+
             # Convert to string to ensure we're working with a string
             text_input = str(text_input)
-            
+
             # Extract all numbers from the text using regex
             numbers = re.findall(r'\d+', text_input)
-            
+
             # Check if we have at least 2 numbers
             if len(numbers) < 2:
                 print(f"EZ_Text_to_Size: Need at least 2 numbers, found {len(numbers)} in '{text_input}'.")
                 return (None)
-            
+
             # Return last two numbers as width and height
             width = int(numbers[-2])
             height = int(numbers[-1])
             return (width, height,)
-            
+
         except Exception as e:
             print(f"EZ_Text_to_Size: Error processing input '{text_input}': {str(e)}.")
             return (None)
